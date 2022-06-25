@@ -4,7 +4,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/rprtr258/goflow/stream"
+	"github.com/rprtr258/go-flow/stream"
 )
 
 var endline = "\n"

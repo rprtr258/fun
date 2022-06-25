@@ -3,7 +3,7 @@ package fun_test
 import (
 	"testing"
 
-	"github.com/rprtr258/goflow/fun"
+	"github.com/rprtr258/go-flow/fun"
 	"github.com/stretchr/testify/assert"
 )
 

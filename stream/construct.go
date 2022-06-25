@@ -3,8 +3,8 @@ package stream
 // functions to make Stream from something that is not stream
 
 import (
-	"github.com/rprtr258/goflow/fun"
-	"github.com/rprtr258/goflow/slice"
+	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/slice"
 )
 
 // Once returns a stream of one value.

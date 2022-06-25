@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/rprtr258/goflow/fun"
-	"github.com/rprtr258/goflow/result"
-	i "github.com/rprtr258/goflow/result"
-	"github.com/rprtr258/goflow/stream"
+	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/result"
+	i "github.com/rprtr258/go-flow/result"
+	"github.com/rprtr258/go-flow/stream"
 )
 
 const exampleText = `

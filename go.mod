@@ -1,4 +1,4 @@
-module github.com/rprtr258/goflow
+module github.com/rprtr258/go-flow
 
 go 1.18
 

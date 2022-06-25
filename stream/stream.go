@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/rprtr258/goflow/fun"
+	"github.com/rprtr258/go-flow/fun"
 )
 
 // Stream is a finite or infinite stream of values.

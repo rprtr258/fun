@@ -1,7 +1,7 @@
 // Package slice provides reusable slice utility functions.
 package slice
 
-import "github.com/rprtr258/goflow/fun"
+import "github.com/rprtr258/go-flow/fun"
 
 // FromMap makes slice of key/value pairs from map.
 func FromMap[A comparable, B any](kv map[A]B) []fun.Pair[A, B] {

@@ -5,8 +5,8 @@ import (
 	"io"
 	"log"
 
-	"github.com/rprtr258/goflow/fun"
-	s "github.com/rprtr258/goflow/stream"
+	"github.com/rprtr258/go-flow/fun"
+	s "github.com/rprtr258/go-flow/stream"
 )
 
 const defaultChunkSize = 4 * 1024 // 4 KB

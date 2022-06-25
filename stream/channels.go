@@ -1,7 +1,7 @@
 package stream
 
 import (
-	"github.com/rprtr258/goflow/fun"
+	"github.com/rprtr258/go-flow/fun"
 )
 
 // ToChannel sends all stream elements to the given channel.
