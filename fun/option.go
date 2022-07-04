@@ -49,3 +49,8 @@ func FoldOption[A, B any](x Option[A], fLeft func(A) B, fRight func() B) B {
 func Map[A, B any](x Option[A], f func(A) B) Option[B] {
 	return FoldOption(x, Compose(f, Some[B]), None[B])
 }
+
+// FlatMap applies function to value if present.
+func FlatMap[A, B any](mx Option[A], f func(A) Option[B]) Option[B] {
+	return FoldOption(mx, f, func() Option[B] { return None[B]() })
+}
