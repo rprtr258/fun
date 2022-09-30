@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/rprtr258/go-flow/fun"
@@ -213,30 +214,30 @@ func TestPaged(t *testing.T) {
 	assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 7}, got)
 }
 
-// func collectStreamsConcurrently(streams []Stream[int]) [][]int {
-// 	var (
-// 		mu sync.Mutex
-// 		wg sync.WaitGroup
-// 	)
-// 	n := len(streams)
-// 	slices := make([][]int, n)
-// 	wg.Add(n)
-// 	for i, stream := range streams {
-// 		stream := stream
-// 		i := i
-// 		go func() {
-// 			defer wg.Done()
+func collectStreamsConcurrently(streams []Stream[int]) [][]int {
+	var (
+		mu sync.Mutex
+		wg sync.WaitGroup
+	)
+	n := len(streams)
+	slices := make([][]int, n)
+	wg.Add(n)
+	for i, stream := range streams {
+		stream := stream
+		i := i
+		go func() {
+			defer wg.Done()
 
-// 			slice := CollectToSlice(stream)
+			slice := CollectToSlice(stream)
 
-// 			mu.Lock()
-// 			defer mu.Unlock()
-// 			slices[i] = slice
-// 		}()
-// 	}
-// 	wg.Wait()
-// 	return slices
-// }
+			mu.Lock()
+			defer mu.Unlock()
+			slices[i] = slice
+		}()
+	}
+	wg.Wait()
+	return slices
+}
 
 // func TestScatterEvenly(t *testing.T) {
 // 	n := uint(4)
@@ -273,26 +274,26 @@ func TestPaged(t *testing.T) {
 // 	}, got)
 // }
 
-// func TestScatterRoute(t *testing.T) {
-// 	streams := ScatterRoute(nats10(), []func(uint, int) bool{
-// 		func(i uint, _ int) bool { return i < 3 },    // first three to first stream
-// 		func(_ uint, x int) bool { return x%2 == 0 }, // evens to second stream
-// 		func(_ uint, x int) bool { return x%3 == 0 }, // multiples of three to third stream
-// 		// rest to fourth stream
-// 	})
-// 	got := collectStreamsConcurrently(streams)
-// 	assert.Equal(t, [][]int{
-// 		{0, 1, 2},
-// 		{4, 6, 8},
-// 		{3, 9},
-// 		{5, 7},
-// 	}, got)
-// }
+func TestScatterRoute(t *testing.T) {
+	streams := ScatterRoute(nats10(), []func(uint, int) bool{
+		func(i uint, _ int) bool { return i < 3 },    // first three to first stream
+		func(_ uint, x int) bool { return x%2 == 0 }, // evens to second stream
+		func(_ uint, x int) bool { return x%3 == 0 }, // multiples of three to third stream
+		// rest to fourth stream
+	})
+	got := collectStreamsConcurrently(streams)
+	assert.Equal(t, [][]int{
+		{0, 1, 2},
+		{4, 6, 8},
+		{3, 9},
+		{5, 7},
+	}, got)
+}
 
-// func TestGather(t *testing.T) {
-// 	got := CollectToSlice(Gather([]Stream[int]{nats10(), nats10()}))
-// 	assert.ElementsMatch(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, got)
-// }
+func TestGather(t *testing.T) {
+	got := CollectToSlice(Gather([]Stream[int]{nats10(), nats10()}))
+	assert.ElementsMatch(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, got)
+}
 
 func TestRange(t *testing.T) {
 	got := CollectToSlice(Range(0, 10, 3))

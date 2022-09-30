@@ -366,44 +366,42 @@ func Scatter[A any](xs Stream[A], n uint) []Stream[A] {
 // 	))
 // }
 
-// // ScatterRoute routes elements from source stream into first matching predicate stream or last stream if non matched.
-// // Routes are functions from source element index and element to bool: does element match the route or not.
-// func ScatterRoute[A any](xs Stream[A], routes []func(uint, A) bool) []Stream[A] {
-// 	ch := ToChannel(xs)
+// ScatterRoute routes elements from source stream into first matching predicate stream or last stream if non matched.
+// Routes are functions from source element index and element to bool: does element match the route or not.
+func ScatterRoute[A any](xs Stream[A], routes []func(uint, A) bool) []Stream[A] {
+	n := len(routes)
+	chans := make([]chan A, 0, n+1)
+	for i := 0; i < n+1; i++ {
+		chans = append(chans, make(chan A))
+	}
+	go func() {
+		idx := uint(0)
+		for {
+			x, ok := <-xs
+			if !ok {
+				goto END
+			}
+			for i := 0; i < n; i++ {
+				if routes[i](idx, x) {
+					chans[i] <- x
+					goto MATCH_FOUND
+				}
+			}
+			chans[n] <- x
+		MATCH_FOUND:
+			idx++
+		}
+	END:
+		for _, outCh := range chans {
+			close(outCh)
+		}
+	}()
 
-// 	n := len(routes)
-// 	chans := make([]chan A, 0, n+1)
-// 	for i := 0; i < n+1; i++ {
-// 		chans = append(chans, make(chan A))
-// 	}
-// 	go func() {
-// 		idx := uint(0)
-// 		for {
-// 			x, ok := <-ch
-// 			if !ok {
-// 				goto END
-// 			}
-// 			for i := 0; i < n; i++ {
-// 				if routes[i](idx, x) {
-// 					chans[i] <- x
-// 					goto MATCH_FOUND
-// 				}
-// 			}
-// 			chans[n] <- x
-// 		MATCH_FOUND:
-// 			idx++
-// 		}
-// 	END:
-// 		for _, outCh := range chans {
-// 			close(outCh)
-// 		}
-// 	}()
-
-// 	return CollectToSlice(Map(
-// 		FromSlice(chans),
-// 		func(c chan A) Stream[A] { return FromChannel(c) },
-// 	))
-// }
+	return CollectToSlice(Map(
+		FromSlice(chans),
+		func(c chan A) Stream[A] { return c },
+	))
+}
 
 // Gather gets elements from all input streams into single stream.
 func Gather[A any](xss []Stream[A]) Stream[A] {
