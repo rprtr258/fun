@@ -320,22 +320,21 @@ func Paged[A any](xs Stream[[]A]) Stream[A] {
 // 	return res
 // }
 
-// // Scatter splits stream into N streams, each element from source stream goes to one of the result streams.
-// func Scatter[A any](xs Stream[A], n uint) []Stream[A] {
-// 	ch := ToChannel(xs)
-// 	res := make([]Stream[A], 0, n)
-// 	for i := uint(0); i < n; i++ {
-// 		outCh := make(chan A)
-// 		go func() {
-// 			for x := range ch {
-// 				outCh <- x
-// 			}
-// 			close(outCh)
-// 		}()
-// 		res = append(res, FromChannel(outCh))
-// 	}
-// 	return res
-// }
+// Scatter splits stream into N streams, each element from source stream goes to one of the result streams.
+func Scatter[A any](xs Stream[A], n uint) []Stream[A] {
+	res := make([]Stream[A], 0, n)
+	for i := uint(0); i < n; i++ {
+		outCh := make(chan A)
+		go func() {
+			for x := range xs {
+				outCh <- x
+			}
+			close(outCh)
+		}()
+		res = append(res, outCh)
+	}
+	return res
+}
 
 // // ScatterEvenly splits stream into N streams of source elements using round robin distribution
 // func ScatterEvenly[A any](xs Stream[A], n uint) []Stream[A] {
@@ -406,24 +405,23 @@ func Paged[A any](xs Stream[[]A]) Stream[A] {
 // 	))
 // }
 
-// // Gather gets elements from all input streams into single stream.
-// func Gather[A any](xss []Stream[A]) Stream[A] {
-// 	ch := make(chan A)
-// 	done := make(chan fun.Unit, len(xss))
-// 	for _, xs := range xss {
-// 		go func(xs Stream[A]) {
-// 			chIn := ToChannel(xs)
-// 			for x := range chIn {
-// 				ch <- x
-// 			}
-// 			done <- fun.Unit1
-// 		}(xs)
-// 	}
-// 	go func() {
-// 		for range xss {
-// 			<-done
-// 		}
-// 		close(ch)
-// 	}()
-// 	return FromChannel(ch)
-// }
+// Gather gets elements from all input streams into single stream.
+func Gather[A any](xss []Stream[A]) Stream[A] {
+	res := make(chan A)
+	done := make(chan fun.Unit, len(xss))
+	for _, xs := range xss {
+		go func(xs Stream[A]) {
+			for x := range xs {
+				res <- x
+			}
+			done <- fun.Unit1
+		}(xs)
+	}
+	go func() {
+		for range xss {
+			<-done
+		}
+		close(res)
+	}()
+	return res
+}
