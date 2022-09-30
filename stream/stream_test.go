@@ -251,16 +251,16 @@ func collectStreamsConcurrently(streams []Stream[int]) [][]int {
 // 	}, got)
 // }
 
-// func TestScatter(t *testing.T) {
-// 	n := uint(4)
-// 	streams := Scatter(nats10(), n)
-// 	slices := collectStreamsConcurrently(streams)
-// 	got := make([]int, 0)
-// 	for _, slice := range slices {
-// 		got = append(got, slice...)
-// 	}
-// 	assert.ElementsMatch(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, got)
-// }
+func TestScatter(t *testing.T) {
+	n := uint(4)
+	streams := Scatter(nats10(), n)
+	slices := collectStreamsConcurrently(streams)
+	got := make([]int, 0)
+	for _, slice := range slices {
+		got = append(got, slice...)
+	}
+	assert.ElementsMatch(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, got)
+}
 
 // func TestScatterCopy(t *testing.T) {
 // 	n := uint(4)
