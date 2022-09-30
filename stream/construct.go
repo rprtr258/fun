@@ -9,7 +9,7 @@ import (
 
 // Once returns a stream of one value.
 func Once[A any](a A) Stream[A] {
-	return FromSlice([]A{a})
+	return FromMany(a)
 }
 
 // FromMany returns a stream with all the given values.
@@ -17,22 +17,16 @@ func FromMany[A any](as ...A) Stream[A] {
 	return FromSlice(as)
 }
 
-type sliceImpl[A any] struct {
-	data []A
-	i    int
-}
-
-func (xs *sliceImpl[A]) Next() fun.Option[A] {
-	if xs.i == len(xs.data) {
-		return fun.None[A]()
-	}
-	xs.i++
-	return fun.Some(xs.data[xs.i-1])
-}
-
 // FromSlice constructs a stream from the slice.
 func FromSlice[A any](xs []A) Stream[A] {
-	return &sliceImpl[A]{xs, 0}
+	res := make(chan A)
+	go func() {
+		for _, x := range xs {
+			res <- x
+		}
+		close(res)
+	}()
+	return res
 }
 
 // FromSet constructs stream from set elements.
@@ -44,31 +38,23 @@ func FromSet[A comparable](xs fun.Set[A]) Stream[A] {
 	return FromSlice(slice)
 }
 
-type generateImpl[A any] struct {
-	x A
-	f func(A) A
-}
-
-func (xs *generateImpl[A]) Next() fun.Option[A] {
-	res := xs.x
-	xs.x = xs.f(xs.x)
-	return fun.Some(res)
-}
-
 // Generate constructs an infinite stream of values using the production function.
 func Generate[A any](x0 A, f func(A) A) Stream[A] {
-	return &generateImpl[A]{x0, f}
-}
-
-type emptyImpl[A any] struct{}
-
-func (xs *emptyImpl[A]) Next() fun.Option[A] {
-	return fun.None[A]()
+	res := make(chan A)
+	go func() {
+		for {
+			res <- x0
+			x0 = f(x0)
+		}
+	}()
+	return res
 }
 
 // NewStreamEmpty returns an empty stream.
 func NewStreamEmpty[A any]() Stream[A] {
-	return &emptyImpl[A]{}
+	res := make(chan A)
+	close(res)
+	return res
 }
 
 // FromMap constructs Stream of key/value pairs from given map.

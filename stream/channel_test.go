@@ -24,7 +24,6 @@ func TestStreamConversion(t *testing.T) {
 		}
 		close(output)
 	}()
-	o := FromPairOfChannels(Map(p, mul2), input, output)
-	oo := o.Next().Unwrap()
-	assert.Equal(t, 20, oo)
+	out := FromPairOfChannels(Map(p, mul2), input, output)
+	assert.Equal(t, 20, <-out)
 }
