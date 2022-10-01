@@ -27,3 +27,11 @@ test:
   go test -coverprofile=coverage.out ./...
   go tool cover -html coverage.out
   rm coverage.out
+
+# run ci checks
+@ci: lint test
+
+# install git precommit hook
+@setup:
+  echo "#!/bin/env just ci" > .git/hooks/precommit
+  chmod +x .git/hooks/precommit
