@@ -245,80 +245,31 @@ func Paged[A any](xs Stream[[]A]) Stream[A] {
 	return FlatMap(xs, FromSlice[A])
 }
 
-// type bufEntry[A any] struct {
-// 	value       A
-// 	streamsLeft int64
-// }
+// ScatterCopy copies stream into N streams with all source elements.
+// ALL resulting streams must be consumed concurrently, use with caution.
+func ScatterCopy[A any](xs Stream[A], n int) []Stream[A] {
+	chans := make([]chan A, n)
+	for i := range chans {
+		chans[i] = make(chan A)
+	}
 
-// type scatterCopyImpl[A any] struct {
-// 	source       Stream[A]
-// 	buf          *[]bufEntry[A]
-// 	deleted      *int
-// 	mu           *sync.Mutex
-// 	totalStreams int64
+	go func() {
+		for x := range xs {
+			for _, ch := range chans {
+				ch <- x
+			}
+		}
+		for _, ch := range chans {
+			close(ch)
+		}
+	}()
 
-// 	index int
-// }
-
-// func (xs *scatterCopyImpl[A]) advanceBuffer() {
-// 	if xs.index-*xs.deleted == len(*xs.buf) {
-// 		x := xs.source.Next()
-// 		if x.IsNone() {
-// 			return
-// 		}
-// 		bufEntry := bufEntry[A]{
-// 			value:       x.Unwrap(),
-// 			streamsLeft: xs.totalStreams,
-// 		}
-// 		if len(*xs.buf) == cap(*xs.buf) {
-// 			// reallocate buffer
-// 			buf := append(*xs.buf, bufEntry)
-// 			*xs.buf = buf
-// 		} else {
-// 			// insert into buffer without realloc, **xs.buf is not changed
-// 			*xs.buf = append(*xs.buf, bufEntry)
-// 		}
-// 	}
-// }
-
-// func (xs *scatterCopyImpl[A]) Next() fun.Option[A] {
-// 	xs.mu.Lock()
-// 	defer xs.mu.Unlock()
-
-// 	xs.advanceBuffer()
-
-// 	effectiveIndex := xs.index - *xs.deleted
-// 	if effectiveIndex == len(*xs.buf) {
-// 		return fun.None[A]()
-// 	}
-// 	atomic.AddInt64(&(*xs.buf)[effectiveIndex].streamsLeft, -1)
-// 	x := (*xs.buf)[effectiveIndex].value
-// 	if (*xs.buf)[effectiveIndex].streamsLeft == 0 {
-// 		*xs.deleted++
-// 		*xs.buf = (*xs.buf)[1:]
-// 	}
-// 	xs.index++
-// 	return fun.Some(x)
-// }
-
-// // ScatterCopy copies stream into N streams with all source elements.
-// func ScatterCopy[A any](xs Stream[A], n uint) []Stream[A] {
-// 	buf := make([]bufEntry[A], 0)
-// 	var mu sync.Mutex
-// 	deleted := 0
-// 	res := make([]Stream[A], 0, n)
-// 	for i := uint(0); i < n; i++ {
-// 		res = append(res, &scatterCopyImpl[A]{
-// 			source:       xs,
-// 			buf:          &buf,
-// 			deleted:      &deleted,
-// 			mu:           &mu,
-// 			totalStreams: int64(n),
-// 			index:        0,
-// 		})
-// 	}
-// 	return res
-// }
+	res := make([]Stream[A], n)
+	for i := range res {
+		res[i] = chans[i]
+	}
+	return res
+}
 
 // Scatter splits stream into N streams, each element from source stream goes to one of the result streams.
 func Scatter[A any](xs Stream[A], n uint) []Stream[A] {
@@ -336,35 +287,33 @@ func Scatter[A any](xs Stream[A], n uint) []Stream[A] {
 	return res
 }
 
-// // ScatterEvenly splits stream into N streams of source elements using round robin distribution
-// func ScatterEvenly[A any](xs Stream[A], n uint) []Stream[A] {
-// 	ch := ToChannel(xs)
+// ScatterEvenly splits stream into N streams of source elements using round robin distribution
+func ScatterEvenly[A any](xs Stream[A], n uint) []Stream[A] {
+	chans := make([]chan A, 0, n)
+	for i := uint(0); i < n; i++ {
+		chans = append(chans, make(chan A))
+	}
+	go func() {
+		for {
+			for _, outCh := range chans {
+				x, ok := <-xs
+				if !ok {
+					goto END
+				}
+				outCh <- x
+			}
+		}
+	END:
+		for _, outCh := range chans {
+			close(outCh)
+		}
+	}()
 
-// 	chans := make([]chan A, 0, n)
-// 	for i := uint(0); i < n; i++ {
-// 		chans = append(chans, make(chan A))
-// 	}
-// 	go func() {
-// 		for {
-// 			for _, outCh := range chans {
-// 				x, ok := <-ch
-// 				if !ok {
-// 					goto END
-// 				}
-// 				outCh <- x
-// 			}
-// 		}
-// 	END:
-// 		for _, outCh := range chans {
-// 			close(outCh)
-// 		}
-// 	}()
-
-// 	return CollectToSlice(Map(
-// 		FromSlice(chans),
-// 		func(c chan A) Stream[A] { return FromChannel(c) },
-// 	))
-// }
+	return CollectToSlice(Map(
+		FromSlice(chans),
+		func(c chan A) Stream[A] { return c },
+	))
+}
 
 // ScatterRoute routes elements from source stream into first matching predicate stream or last stream if non matched.
 // Routes are functions from source element index and element to bool: does element match the route or not.

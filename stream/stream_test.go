@@ -239,17 +239,17 @@ func collectStreamsConcurrently(streams []Stream[int]) [][]int {
 	return slices
 }
 
-// func TestScatterEvenly(t *testing.T) {
-// 	n := uint(4)
-// 	streams := ScatterEvenly(nats10(), n)
-// 	got := collectStreamsConcurrently(streams)
-// 	assert.Equal(t, [][]int{
-// 		{0, 4, 8},
-// 		{1, 5, 9},
-// 		{2, 6},
-// 		{3, 7},
-// 	}, got)
-// }
+func TestScatterEvenly(t *testing.T) {
+	n := uint(4)
+	streams := ScatterEvenly(nats10(), n)
+	got := collectStreamsConcurrently(streams)
+	assert.Equal(t, [][]int{
+		{0, 4, 8},
+		{1, 5, 9},
+		{2, 6},
+		{3, 7},
+	}, got)
+}
 
 func TestScatter(t *testing.T) {
 	n := uint(4)
@@ -262,17 +262,17 @@ func TestScatter(t *testing.T) {
 	assert.ElementsMatch(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, got)
 }
 
-// func TestScatterCopy(t *testing.T) {
-// 	n := uint(4)
-// 	streams := ScatterCopy(nats10(), n)
-// 	got := collectStreamsConcurrently(streams)
-// 	assert.Equal(t, [][]int{
-// 		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-// 		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-// 		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-// 		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-// 	}, got)
-// }
+func TestScatterCopy(t *testing.T) {
+	n := 4
+	streams := ScatterCopy(nats10(), n)
+	got := collectStreamsConcurrently(streams)
+	assert.Equal(t, [][]int{
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+	}, got)
+}
 
 func TestScatterRoute(t *testing.T) {
 	streams := ScatterRoute(nats10(), []func(uint, int) bool{
