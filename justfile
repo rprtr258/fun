@@ -20,7 +20,7 @@
 
 # run tests
 test:
-  go test ./... -count=10 -race -cover
+  go test ./... -count=10 -race
 
 # check opens test cover in browser
 @cover:
