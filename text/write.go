@@ -36,11 +36,9 @@ func WriteLines(writer io.Writer, xs s.Stream[string]) {
 		s.Intersperse(xs, endline),
 		func(chunk string) {
 			s := []byte(chunk)
-			cnt, err := writer.Write(s)
+			_, err := writer.Write(s)
 			if err != nil {
 				log.Printf("error writing to %v: %v\n", writer, err)
-			} else if cnt != len(s) {
-				log.Printf("only %d out of %d bytes were written\n", cnt, len(s))
 			}
 		},
 	)
