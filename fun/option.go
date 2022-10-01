@@ -30,6 +30,7 @@ func (x Option[A]) Consume(fSome func(A), fNone func()) {
 	}
 }
 
+// FromNull constructs option from maybe invalid values, like os.LookupEnv or sql.* types.
 func FromNull[A any](a A, valid bool) Option[A] {
 	return Option[A]{
 		a:     a,

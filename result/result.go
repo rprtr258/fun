@@ -1,6 +1,5 @@
+// Package result provides functions to work with Result-s
 package result
-
-// functions to work with `Result`s
 
 import (
 	"fmt"
@@ -13,6 +12,7 @@ import (
 // It is designed to not panic ever.
 type Result[A any] fun.Either[A, error]
 
+// ChangeErr if result is error to a given error.
 func (r Result[A]) ChangeErr(err error) Result[A] {
 	return Fold(r, Success[A], fun.Const[Result[A], error](Err[A](err)))
 }
