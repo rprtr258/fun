@@ -216,7 +216,7 @@ func Unique[A comparable](xs Stream[A]) Stream[A] {
 		seen := fun.NewSet[A]()
 		for x := range xs {
 			if !seen.Contains(x) {
-				seen[x] = fun.Unit1 //TODO: put
+				seen.Add(x)
 				res <- x
 			}
 		}
