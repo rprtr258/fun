@@ -137,8 +137,8 @@ func Take[A any](xs Stream[A], n int) Stream[A] {
 	}
 	res := make(chan A)
 	go func() {
+		defer close(res)
 		if n == 0 {
-			close(res)
 			return
 		}
 		for x := range xs {
@@ -147,10 +147,6 @@ func Take[A any](xs Stream[A], n int) Stream[A] {
 			if n == 0 {
 				break
 			}
-		}
-		close(res)
-		// exhaust
-		for range xs {
 		}
 	}()
 	return res
