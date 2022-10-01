@@ -33,5 +33,5 @@ test:
 
 # install git precommit hook
 @setup:
-  echo "#!/bin/env just ci" > .git/hooks/precommit
-  chmod +x .git/hooks/precommit
+  echo "#!/bin/env sh\njust ci" > .git/hooks/pre-commit
+  chmod +x .git/hooks/pre-commit
