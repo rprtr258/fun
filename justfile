@@ -16,7 +16,7 @@
 
 # check todos
 @todo:
-  rg 'TODO' --glob '**/*.go'
+  rg 'TODO' --glob '**/*.go' || echo 'All done!'
 
 # run tests
 test:
