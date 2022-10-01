@@ -272,9 +272,9 @@ func ScatterCopy[A any](xs Stream[A], n int) []Stream[A] {
 }
 
 // Scatter splits stream into N streams, each element from source stream goes to one of the result streams.
-func Scatter[A any](xs Stream[A], n uint) []Stream[A] {
-	res := make([]Stream[A], 0, n)
-	for i := uint(0); i < n; i++ {
+func Scatter[A any](xs Stream[A], n int) []Stream[A] {
+	res := make([]Stream[A], n)
+	for i := range res {
 		outCh := make(chan A)
 		go func() {
 			for x := range xs {
@@ -282,15 +282,15 @@ func Scatter[A any](xs Stream[A], n uint) []Stream[A] {
 			}
 			close(outCh)
 		}()
-		res = append(res, outCh)
+		res[i] = outCh
 	}
 	return res
 }
 
 // ScatterEvenly splits stream into N streams of source elements using round robin distribution
-func ScatterEvenly[A any](xs Stream[A], n uint) []Stream[A] {
+func ScatterEvenly[A any](xs Stream[A], n int) []Stream[A] {
 	chans := make([]chan A, 0, n)
-	for i := uint(0); i < n; i++ {
+	for i := 0; i < n; i++ {
 		chans = append(chans, make(chan A))
 	}
 	go func() {
@@ -317,14 +317,14 @@ func ScatterEvenly[A any](xs Stream[A], n uint) []Stream[A] {
 
 // ScatterRoute routes elements from source stream into first matching predicate stream or last stream if non matched.
 // Routes are functions from source element index and element to bool: does element match the route or not.
-func ScatterRoute[A any](xs Stream[A], routes []func(uint, A) bool) []Stream[A] {
+func ScatterRoute[A any](xs Stream[A], routes []func(int, A) bool) []Stream[A] {
 	n := len(routes)
 	chans := make([]chan A, 0, n+1)
 	for i := 0; i < n+1; i++ {
 		chans = append(chans, make(chan A))
 	}
 	go func() {
-		idx := uint(0)
+		idx := 0
 		for {
 			x, ok := <-xs
 			if !ok {

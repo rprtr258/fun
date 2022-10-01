@@ -8,7 +8,7 @@ import (
 
 // ForEach invokes a simple function for each element of the stream.
 func ForEach[A any](xs Stream[A], f func(A)) {
-	for x:=range xs{
+	for x := range xs {
 		f(x)
 	}
 }
@@ -39,8 +39,8 @@ func Head[A any](xs Stream[A]) fun.Option[A] {
 
 // Reduce reduces stream into one value using given operation.
 func Reduce[A, B any](start A, op func(A, B) A, xs Stream[B]) A {
-	for x:=range xs {
-		start=op(start,x)
+	for x := range xs {
+		start = op(start, x)
 	}
 	return start
 }
@@ -81,7 +81,7 @@ func GroupAggregate[A, B any, K comparable](xs Stream[A], by func(A) K, aggregat
 
 // ToCounterBy consumes the stream and returns Counter with count of how many times each key was seen.
 func ToCounterBy[A any, K comparable](xs Stream[A], by func(A) K) fun.Counter[K] {
-	return GroupAggregate(xs, by, func(ys []A) uint { return uint(len(ys)) })
+	return GroupAggregate(xs, by, func(ys []A) int { return len(ys) })
 }
 
 // CollectCounter consumes the stream makes Counter with count of how many times each element was seen.
