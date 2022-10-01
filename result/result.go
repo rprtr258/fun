@@ -4,7 +4,7 @@ package result
 import (
 	"fmt"
 
-	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/v2/fun"
 )
 
 // Result represents a calculation that will yield a value of type A once executed.

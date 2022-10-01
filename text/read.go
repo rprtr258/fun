@@ -4,7 +4,7 @@ package text
 import (
 	"io"
 
-	s "github.com/rprtr258/go-flow/stream"
+	s "github.com/rprtr258/go-flow/v2/stream"
 )
 
 const defaultChunkSize = 4 * 1024 // 4 KB

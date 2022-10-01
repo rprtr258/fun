@@ -3,7 +3,7 @@ package result
 // functions to construct something that is not Result from Result
 
 import (
-	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/v2/fun"
 )
 
 // Panic is just a panic function that can be used without calling

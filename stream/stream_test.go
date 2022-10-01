@@ -4,8 +4,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rprtr258/go-flow/fun"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/rprtr258/go-flow/v2/fun"
 )
 
 func nats() Stream[int] {

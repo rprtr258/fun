@@ -3,7 +3,7 @@ package stream
 // functions to make something from Stream that is not Stream.
 
 import (
-	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/v2/fun"
 )
 
 // ForEach invokes a simple function for each element of the stream.

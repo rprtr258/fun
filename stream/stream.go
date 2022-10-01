@@ -4,7 +4,7 @@ package stream
 import (
 	"fmt"
 
-	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/v2/fun"
 )
 
 // Stream is a finite or infinite stream of values.
