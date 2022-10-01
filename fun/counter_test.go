@@ -11,7 +11,7 @@ func TestCounterPlusEmpty(t *testing.T) {
 	c2 := NewCounter[int]()
 	c2[2] = 1
 	got := CounterPlus(c1, c2)
-	assert.Equal(t, Counter[int](map[int]uint{2: 1}), got)
+	assert.Equal(t, Counter[int](map[int]int{2: 1}), got)
 }
 
 func TestCounterPlus(t *testing.T) {
@@ -21,5 +21,5 @@ func TestCounterPlus(t *testing.T) {
 	c2 := NewCounter[int]()
 	c2[2] = 1
 	got := CounterPlus(c1, c2)
-	assert.Equal(t, Counter[int](map[int]uint{1: 1, 2: 3}), got)
+	assert.Equal(t, Counter[int](map[int]int{1: 1, 2: 3}), got)
 }

@@ -3,7 +3,7 @@ package result
 // functions to construct something that is not Result from Result
 
 import (
-	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/v2/fun"
 )
 
 // Panic is just a panic function that can be used without calling
@@ -16,11 +16,12 @@ func (r Result[A]) Unwrap() A {
 	return Fold(r, fun.Identity[A], Panic[error, A])
 }
 
+// UnwrapOr get result value or provided value if result errored.
 func (r Result[A]) UnwrapOr(defaultValue A) A {
 	return Fold(r, fun.Identity[A], fun.Const[A, error](defaultValue))
 }
 
-// Unwrap returns error if present, panics otherwise.
+// UnwrapErr returns error if present, panics otherwise.
 func (r Result[A]) UnwrapErr() error {
 	return Fold(r, Panic[A, error], fun.Identity[error])
 }

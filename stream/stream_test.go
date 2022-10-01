@@ -4,8 +4,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rprtr258/go-flow/fun"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/rprtr258/go-flow/v2/fun"
 )
 
 func nats() Stream[int] {
@@ -119,8 +120,8 @@ func TestGrouped(t *testing.T) {
 
 func TestGroupByMapCount(t *testing.T) {
 	counter := ToCounterBy(nats10(), isEven)
-	assert.Equal(t, uint(5), counter[false])
-	assert.Equal(t, uint(5), counter[true])
+	assert.Equal(t, 5, counter[false])
+	assert.Equal(t, 5, counter[true])
 }
 
 func TestChain(t *testing.T) {
@@ -189,7 +190,7 @@ func TestTakeWhile(t *testing.T) {
 	)
 	got := CollectToSlice(stream)
 	assert.Equal(t, []int{2, 4, 6}, got)
-	assert.Equal(t, fun.None[int](), stream.Next())
+	assert.Equal(t, fun.None[int](), Head(stream))
 }
 
 func TestFilterMap(t *testing.T) {
@@ -240,7 +241,7 @@ func collectStreamsConcurrently(streams []Stream[int]) [][]int {
 }
 
 func TestScatterEvenly(t *testing.T) {
-	n := uint(4)
+	n := 4
 	streams := ScatterEvenly(nats10(), n)
 	got := collectStreamsConcurrently(streams)
 	assert.Equal(t, [][]int{
@@ -252,7 +253,7 @@ func TestScatterEvenly(t *testing.T) {
 }
 
 func TestScatter(t *testing.T) {
-	n := uint(4)
+	n := 4
 	streams := Scatter(nats10(), n)
 	slices := collectStreamsConcurrently(streams)
 	got := make([]int, 0)
@@ -263,7 +264,7 @@ func TestScatter(t *testing.T) {
 }
 
 func TestScatterCopy(t *testing.T) {
-	n := uint(4)
+	n := 4
 	streams := ScatterCopy(nats10(), n)
 	got := collectStreamsConcurrently(streams)
 	assert.Equal(t, [][]int{
@@ -275,10 +276,10 @@ func TestScatterCopy(t *testing.T) {
 }
 
 func TestScatterRoute(t *testing.T) {
-	streams := ScatterRoute(nats10(), []func(uint, int) bool{
-		func(i uint, _ int) bool { return i < 3 },    // first three to first stream
-		func(_ uint, x int) bool { return x%2 == 0 }, // evens to second stream
-		func(_ uint, x int) bool { return x%3 == 0 }, // multiples of three to third stream
+	streams := ScatterRoute(nats10(), []func(int, int) bool{
+		func(i int, _ int) bool { return i < 3 },    // first three to first stream
+		func(_ int, x int) bool { return x%2 == 0 }, // evens to second stream
+		func(_ int, x int) bool { return x%3 == 0 }, // multiples of three to third stream
 		// rest to fourth stream
 	})
 	got := collectStreamsConcurrently(streams)

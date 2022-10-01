@@ -5,7 +5,7 @@ package result
 import (
 	"fmt"
 
-	"github.com/rprtr258/go-flow/fun"
+	"github.com/rprtr258/go-flow/v2/fun"
 )
 
 // ErrorNilDeref is an error on nil pointer dereference

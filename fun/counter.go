@@ -1,7 +1,7 @@
 package fun
 
 // Counter is data structure to count how many elements are in there.
-type Counter[A comparable] map[A]uint
+type Counter[A comparable] map[A]int
 
 // NewCounter creates new empty Counter.
 func NewCounter[A comparable]() Counter[A] {
