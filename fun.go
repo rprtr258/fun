@@ -61,9 +61,28 @@ func Ptr[T any](t T) *T {
 	return &t
 }
 
+func Const[T any](t T) func() T {
+	return func() T { return t }
+}
+
+func Cond[R any](defaultValue R, cases ...func() (R, bool)) R {
+	for _, case_ := range cases {
+		if res, ok := case_(); ok {
+			return res
+		}
+	}
+
+	return defaultValue
+}
+
 func If[T any](condition bool, ifTrue, ifFalse T) T {
 	if condition {
 		return ifTrue
 	}
 	return ifFalse
+}
+
+func Has[K comparable, V any](dict map[K]V, key K) bool {
+	_, ok := dict[key]
+	return ok
 }
