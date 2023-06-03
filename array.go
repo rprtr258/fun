@@ -8,7 +8,7 @@ import (
 )
 
 func Subslice[T any](slice []T, start, end int) []T {
-	if start <= end {
+	if start >= end {
 		return nil
 	}
 

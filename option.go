@@ -1,8 +1,28 @@
 package fun
 
+import "encoding/json"
+
 type Option[T any] struct {
 	value T
 	valid bool
+}
+
+func (o Option[T]) MarshalJSON() ([]byte, error) {
+	if !o.valid {
+		return []byte("null"), nil
+	}
+
+	return json.Marshal(o.value)
+}
+
+func (o *Option[T]) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		o.valid = false
+		return nil
+	}
+
+	o.valid = true
+	return json.Unmarshal(data, &o.value)
 }
 
 func Invalid[T any]() Option[T] {
