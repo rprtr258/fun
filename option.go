@@ -63,6 +63,22 @@ func (o Option[T]) OrDefault(value T) T {
 	return If(o.valid, o.value, value)
 }
 
+func FromPtr[T any](ptr *T) Option[T] {
+	if ptr == nil {
+		return Invalid[T]()
+	}
+
+	return Valid(*ptr)
+}
+
+func (opt Option[T]) Ptr() *T {
+	if !opt.valid {
+		return nil
+	}
+
+	return &opt.value
+}
+
 func OptMap[T, R any](o Option[T], f func(T) R) Option[R] {
 	if !o.valid {
 		return Invalid[R]()
