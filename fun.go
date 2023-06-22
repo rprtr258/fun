@@ -1,11 +1,61 @@
 package fun
 
+import "fmt"
+
+type IthError struct {
+	Index int
+	Op    string
+	Err   error
+}
+
+func (e *IthError) Error() string {
+	return fmt.Sprintf("index: %d, op: %s, err: %s", e.Index, e.Op, e.Err)
+}
+
 func Map[T, R any](slice []T, f func(T) R) []R {
 	res := make([]R, len(slice))
 	for i, elem := range slice {
 		res[i] = f(elem)
 	}
 	return res
+}
+
+func MapErr[T, R any](slice []T, f func(T) (R, error)) ([]R, *IthError) {
+	res := make([]R, len(slice))
+	for i, elem := range slice {
+		y, err := f(elem)
+		if err != nil {
+			return nil, &IthError{i, "map", err}
+		}
+
+		res[i] = y
+	}
+	return res, nil
+}
+
+func Filter[T any](slice []T, f func(T) bool) []T {
+	res := make([]T, 0, len(slice))
+	for _, elem := range slice {
+		if f(elem) {
+			res = append(res, elem)
+		}
+	}
+	return res
+}
+
+func FilterErr[T any](slice []T, f func(T) (bool, error)) ([]T, *IthError) {
+	res := make([]T, len(slice))
+	for i, elem := range slice {
+		ok, err := f(elem)
+		if err != nil {
+			return nil, &IthError{i, "filter", err}
+		}
+
+		if ok {
+			res[i] = elem
+		}
+	}
+	return res, nil
 }
 
 func FilterMap[T, R any](slice []T, f func(T) (R, bool)) []R {
