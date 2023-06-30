@@ -19,6 +19,18 @@ type Stream[T any] interface {
 	Next() (T, error)
 }
 
+type Iterator[T any] interface {
+	// Next returns next value and false, if iterator was not ended.
+	// Returns zero value and true otherwise.
+	Next() (T, bool)
+	// Err returns first error happened during Next calls.
+	Err() error
+}
+
+// Iterator2 is iterator taking function which handles iteratee and returns
+// whether to stop iteration.
+type Iterator2[T any] func(func(T, error) bool)
+
 type StreamFunc[T any] func() (T, error)
 
 func (f StreamFunc[T]) Next() (T, error) {
