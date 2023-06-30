@@ -6,6 +6,10 @@ type Option[A any] struct {
 	valid bool
 }
 
+func (x Option[A]) Unpack() (A, bool) {
+	return x.a, x.valid
+}
+
 // IsNone checks if option does not contain value.
 func (x Option[A]) IsNone() bool {
 	return !x.valid

@@ -19,14 +19,16 @@ func FromMany[A any](as ...A) Stream[A] {
 
 // FromSlice constructs a stream from the slice.
 func FromSlice[A any](xs []A) Stream[A] {
-	res := make(chan A)
-	go func() {
-		for _, x := range xs {
-			res <- x
+	i := 0
+	var zero A
+	return StreamFunc[A](func() (A, error) {
+		if i == len(xs) {
+			return zero, EOF
 		}
-		close(res)
-	}()
-	return res
+
+		i++
+		return xs[i-1], nil
+	})
 }
 
 // FromSet constructs stream from set elements.
@@ -40,21 +42,17 @@ func FromSet[A comparable](xs fun.Set[A]) Stream[A] {
 
 // Generate constructs an infinite stream of values using the production function.
 func Generate[A any](x0 A, f func(A) A) Stream[A] {
-	res := make(chan A)
-	go func() {
-		for {
-			res <- x0
-			x0 = f(x0)
-		}
-	}()
-	return res
+	cur := x0
+	return StreamFunc[A](func() (A, error) {
+		res := cur
+		cur = f(cur)
+		return res, nil
+	})
 }
 
 // NewStreamEmpty returns an empty stream.
 func NewStreamEmpty[A any]() Stream[A] {
-	res := make(chan A)
-	close(res)
-	return res
+	return FromSlice[A](nil)
 }
 
 // FromMap constructs Stream of key/value pairs from given map.

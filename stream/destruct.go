@@ -8,8 +8,16 @@ import (
 
 // ForEach invokes a simple function for each element of the stream.
 func ForEach[A any](xs Stream[A], f func(A)) {
-	for x := range xs {
-		f(x)
+	for {
+		a, err := xs.Next()
+		switch err {
+		case nil:
+			f(a)
+		case EOF:
+			return
+		default:
+			panic(err.Error())
+		}
 	}
 }
 
@@ -34,15 +42,28 @@ func CollectToSet[A comparable](xs Stream[A]) fun.Set[A] {
 
 // Head takes the first element if present.
 func Head[A any](xs Stream[A]) fun.Option[A] {
-	return fun.FromNull(xs.Next())
+	switch x, err := xs.Next(); err {
+	case nil:
+		return fun.Some(x)
+	default:
+		return fun.None[A]()
+	}
 }
 
 // Reduce reduces stream into one value using given operation.
 func Reduce[A, B any](start A, op func(A, B) A, xs Stream[B]) A {
-	for x := range xs {
-		start = op(start, x)
+	acc := start
+	for {
+		b, err := xs.Next()
+		switch err {
+		case nil:
+			acc = op(acc, b)
+		case EOF:
+			return acc
+		default:
+			panic(err.Error())
+		}
 	}
-	return start
 }
 
 // Count consumes stream and returns it's length.
