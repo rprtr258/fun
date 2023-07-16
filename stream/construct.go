@@ -23,7 +23,7 @@ func FromSlice[A any](xs []A) Stream[A] {
 	var zero A
 	return StreamFunc[A](func() (A, error) {
 		if i == len(xs) {
-			return zero, EOF
+			return zero, EOS
 		}
 
 		i++

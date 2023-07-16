@@ -8,7 +8,7 @@ import (
 	"github.com/rprtr258/go-flow/v2/fun"
 )
 
-var EOF = errors.New("stream ended")
+var EOS = errors.New("end of stream")
 
 // Stream is a finite or infinite stream of values.
 type Stream[T any] interface {
@@ -41,9 +41,9 @@ func (f StreamFunc[T]) Next() (T, error) {
 func Map[A, B any](xs Stream[A], f func(A) B) Stream[B] {
 	return StreamFunc[B](func() (B, error) {
 		x, err := xs.Next()
-		if err == EOF {
+		if err == EOS {
 			var b B
-			return b, EOF
+			return b, EOS
 		}
 
 		return f(x), err
@@ -56,7 +56,7 @@ func Chain[A any](xss ...Stream[A]) Stream[A] {
 	i := 0
 	return StreamFunc[A](func() (A, error) {
 		if i == len(xss) {
-			return zero, EOF
+			return zero, EOS
 		}
 
 		for ; i < len(xss); i++ {
@@ -64,14 +64,14 @@ func Chain[A any](xss ...Stream[A]) Stream[A] {
 			switch err {
 			case nil:
 				return x, nil
-			case EOF:
+			case EOS:
 				continue
 			default:
 				return x, err
 			}
 		}
 
-		return zero, EOF
+		return zero, EOS
 	})
 }
 
@@ -86,7 +86,7 @@ func FlatMap[A, B any](xs Stream[A], f func(A) Stream[B]) Stream[B] {
 				switch err {
 				case nil:
 					return x, nil
-				case EOF:
+				case EOS:
 				default:
 					return zero, err
 				}
@@ -96,8 +96,8 @@ func FlatMap[A, B any](xs Stream[A], f func(A) Stream[B]) Stream[B] {
 			switch err {
 			case nil:
 				batch = f(x)
-			case EOF:
-				return zero, EOF
+			case EOS:
+				return zero, EOS
 			default:
 				return zero, err
 			}
@@ -134,9 +134,9 @@ func Chunked[A any](xs Stream[A], n int) Stream[[]A] {
 			switch err {
 			case nil:
 				res = append(res, x)
-			case EOF:
+			case EOS:
 				if len(res) == 0 {
-					return nil, EOF
+					return nil, EOS
 				}
 
 				return res, nil
@@ -156,7 +156,7 @@ func Intersperse[A any](xs Stream[A], sep A) Stream[A] {
 	var zero A
 	return StreamFunc[A](func() (A, error) {
 		if ended {
-			return zero, EOF
+			return zero, EOS
 		}
 
 		if isSep {
@@ -168,10 +168,10 @@ func Intersperse[A any](xs Stream[A], sep A) Stream[A] {
 		switch x, err := xs.Next(); err {
 		case nil:
 			return x, nil
-		case EOF:
+		case EOS:
 			ended = true
 			isSep = false
-			return zero, EOF
+			return zero, EOS
 		default:
 			return zero, err
 		}
@@ -188,7 +188,7 @@ X:
 		switch err {
 		case nil:
 			buf = append(buf, x)
-		case EOF:
+		case EOS:
 			break X
 		default:
 			ierr = err
@@ -219,7 +219,7 @@ func Take[A any](xs Stream[A], n int) Stream[A] {
 	var zero A
 	return StreamFunc[A](func() (A, error) {
 		if took == n {
-			return zero, EOF
+			return zero, EOS
 		}
 
 		took++
@@ -246,8 +246,8 @@ func Filter[A any](xs Stream[A], p func(A) bool) Stream[A] {
 				if p(x) {
 					return x, nil
 				}
-			case EOF:
-				return zero, EOF
+			case EOS:
+				return zero, EOS
 			default:
 				return zero, err
 			}
@@ -267,7 +267,7 @@ func TakeWhile[A any](xs Stream[A], p func(A) bool) Stream[A] {
 	ended := false
 	return StreamFunc[A](func() (A, error) {
 		if ended {
-			return zero, EOF
+			return zero, EOS
 		}
 
 		for {
@@ -275,12 +275,12 @@ func TakeWhile[A any](xs Stream[A], p func(A) bool) Stream[A] {
 			case nil:
 				if p(x) {
 					return x, nil
-				} else {
-					ended = true
-					return zero, EOF
 				}
-			case EOF:
-				return zero, EOF
+
+				ended = true
+				return zero, EOS
+			case EOS:
+				return zero, EOS
 			default:
 				return zero, err
 			}
@@ -317,8 +317,8 @@ func MapFilter[A, B any](xs Stream[A], f func(A) fun.Option[B]) Stream[B] {
 				if ok {
 					return y, nil
 				}
-			case EOF:
-				return zero, EOF
+			case EOS:
+				return zero, EOS
 			default:
 				return zero, err
 			}
@@ -458,3 +458,27 @@ func Paged[A any](xs Stream[[]A]) Stream[A] {
 // 	}()
 // 	return res
 // }
+
+type generator[T any] struct {
+	ch chan T
+}
+
+func NewGenerator[T any](f func(func(T))) Stream[T] {
+	ch := make(chan T)
+	go func() {
+		f(func(t T) { ch <- t })
+		close(ch)
+	}()
+	return generator[T]{
+		ch: ch,
+	}
+}
+
+func (g generator[T]) Next() (T, error) {
+	res, ok := <-g.ch
+	if !ok {
+		return res, EOS
+	}
+
+	return res, nil
+}

@@ -300,3 +300,15 @@ func TestRange(t *testing.T) {
 	got := CollectToSlice(Range(0, 10, 3))
 	assert.Equal(t, []int{0, 3, 6, 9}, got)
 }
+
+func TestNewStream(t *testing.T) {
+	got := CollectToSlice(NewGenerator(func(yield func(int)) {
+		yield(1)
+		yield(2)
+		yield(3)
+		for i := 4; i <= 9; i++ {
+			yield(i)
+		}
+	}))
+	assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 7, 8, 9}, got)
+}

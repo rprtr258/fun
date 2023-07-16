@@ -13,7 +13,7 @@ func ForEach[A any](xs Stream[A], f func(A)) {
 		switch err {
 		case nil:
 			f(a)
-		case EOF:
+		case EOS:
 			return
 		default:
 			panic(err.Error())
@@ -58,7 +58,7 @@ func Reduce[A, B any](start A, op func(A, B) A, xs Stream[B]) A {
 		switch err {
 		case nil:
 			acc = op(acc, b)
-		case EOF:
+		case EOS:
 			return acc
 		default:
 			panic(err.Error())
