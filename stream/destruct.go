@@ -8,27 +8,15 @@ import (
 
 // ForEach invokes a simple function for each element of the stream.
 func ForEach[A any](xs Stream[A], f func(A)) {
-	for {
-		a, err := xs.Next()
-		switch err {
-		case nil:
-			f(a)
-		case EOS:
-			return
-		default:
-			panic(err.Error())
-		}
-	}
-}
-
-// DrainAll throws away all values.
-func DrainAll[A any](xs Stream[A]) {
-	ForEach(xs, func(_ A) {})
+	_ = xs.For(func(a A) bool {
+		f(a)
+		return true
+	})
 }
 
 // CollectToSlice executes the stream and collects all results to a slice.
 func CollectToSlice[A any](xs Stream[A]) []A {
-	slice := make([]A, 0)
+	slice := make([]A, 0, Count(xs))
 	ForEach(xs, func(a A) { slice = append(slice, a) })
 	return slice
 }
@@ -42,28 +30,22 @@ func CollectToSet[A comparable](xs Stream[A]) fun.Set[A] {
 
 // Head takes the first element if present.
 func Head[A any](xs Stream[A]) fun.Option[A] {
-	switch x, err := xs.Next(); err {
-	case nil:
-		return fun.Some(x)
-	default:
-		return fun.None[A]()
-	}
+	var res fun.Option[A]
+	xs.For(func(a A) bool {
+		res = fun.Some(a)
+		return false
+	})
+	return res
 }
 
 // Reduce reduces stream into one value using given operation.
 func Reduce[A, B any](start A, op func(A, B) A, xs Stream[B]) A {
 	acc := start
-	for {
-		b, err := xs.Next()
-		switch err {
-		case nil:
-			acc = op(acc, b)
-		case EOS:
-			return acc
-		default:
-			panic(err.Error())
-		}
-	}
+	xs.For(func(b B) bool {
+		acc = op(acc, b)
+		return true
+	})
+	return acc
 }
 
 // Count consumes stream and returns it's length.

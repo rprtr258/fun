@@ -8,100 +8,152 @@ import (
 	"github.com/rprtr258/go-flow/v2/fun"
 )
 
-var EOS = errors.New("end of stream")
-
-// Stream is a finite or infinite stream of values.
-type Stream[T any] interface {
-	// Next returns the next value in stream. Returned error is:
-	// - nil if value is got with no errors.
-	// - EOF is returned if stream has ended.
-	// - error if some error happened.
-	Next() (T, error)
-}
-
-type Iterator[T any] interface {
-	// Next returns next value and false, if iterator was not ended.
-	// Returns zero value and true otherwise.
-	Next() (T, bool)
-	// Err returns first error happened during Next calls.
-	Err() error
-}
+var ErrBreak = errors.New("break prematurely")
 
 // Iterator2 is iterator taking function which handles iteratee and returns
-// whether to stop iteration.
-type Iterator2[T any] func(func(T, error) bool)
+// whether to stop iteration. Returns error happened during iteration or ErrBreak
+// if exited prematurely.
+type Stream[T any] interface {
+	For(func(T) bool) error
+}
 
-type StreamFunc[T any] func() (T, error)
+type Chan[T any] <-chan T
 
-func (f StreamFunc[T]) Next() (T, error) {
-	return f()
+func (c Chan[T]) For(f func(T) bool) error {
+	for x := range c {
+		if !f(x) {
+			return ErrBreak
+		}
+	}
+
+	return nil
+}
+
+type Int int
+
+func (n Int) For(f func(int) bool) error {
+	for i := 0; i < int(n); i++ {
+		if !f(i) {
+			return ErrBreak
+		}
+	}
+
+	return nil
+}
+
+// Must return true if yield has not returned false
+type PushFunc[T any] func(func(T) bool) bool
+
+func (sf PushFunc[T]) For(f func(T) bool) error {
+	if !sf(f) {
+		return ErrBreak
+	}
+
+	return nil
+}
+
+var ErrPullEnd = errors.New("pull end prematurely")
+
+type PullFunc[T any] func() (T, error)
+
+func (sf PullFunc[T]) For(f func(T) bool) error {
+	for {
+		x, err := sf()
+		if err != nil {
+			if err == ErrPullEnd {
+				return nil
+			}
+
+			return err
+		}
+
+		if !f(x) {
+			return ErrBreak
+		}
+	}
+}
+
+type Stream2[K, V any] interface {
+	For(func(K, V) bool) error
+}
+
+type Slice[T any] []T
+
+func (s Slice[T]) For(f func(int, T) bool) error {
+	for i, x := range s {
+		if !f(i, x) {
+			return ErrBreak
+		}
+	}
+
+	return nil
+}
+
+type String string
+
+func (s String) For(f func(int, rune) bool) error {
+	for i, r := range s {
+		if !f(i, r) {
+			return ErrBreak
+		}
+	}
+
+	return nil
+}
+
+type Dict[K comparable, V any] map[K]V
+
+func (d Dict[K, V]) For(f func(K, V) bool) error {
+	for k, v := range d {
+		if !f(k, v) {
+			return ErrBreak
+		}
+	}
+
+	return nil
+}
+
+// Must return true if yield has not returned false
+type PushFunc2[K, V any] func(func(K, V) bool) bool
+
+func (sf PushFunc2[K, V]) For(f func(K, V) bool) error {
+	if !sf(f) {
+		return ErrBreak
+	}
+
+	return nil
 }
 
 // Map converts values of the stream.
 func Map[A, B any](xs Stream[A], f func(A) B) Stream[B] {
-	return StreamFunc[B](func() (B, error) {
-		x, err := xs.Next()
-		if err == EOS {
-			var b B
-			return b, EOS
-		}
-
-		return f(x), err
+	return PushFunc[B](func(yield func(B) bool) bool {
+		return xs.For(func(a A) bool {
+			return yield(f(a))
+		}) != ErrBreak
 	})
 }
 
 // Chain appends another stream after the end of the first one.
 func Chain[A any](xss ...Stream[A]) Stream[A] {
-	var zero A
-	i := 0
-	return StreamFunc[A](func() (A, error) {
-		if i == len(xss) {
-			return zero, EOS
-		}
-
-		for ; i < len(xss); i++ {
-			x, err := xss[i].Next()
-			switch err {
-			case nil:
-				return x, nil
-			case EOS:
-				continue
-			default:
-				return x, err
+	return PushFunc[A](func(yield func(A) bool) bool {
+		for _, xs := range xss {
+			if err := xs.For(func(a A) bool {
+				return yield(a)
+			}); err != nil {
+				return false
 			}
 		}
 
-		return zero, EOS
+		return true
 	})
 }
 
 // FlatMap maps stream using function and concatenates result streams into one.
 func FlatMap[A, B any](xs Stream[A], f func(A) Stream[B]) Stream[B] {
-	var zero B
-	var batch Stream[B]
-	return StreamFunc[B](func() (B, error) {
-		for {
-			if batch != nil {
-				x, err := batch.Next()
-				switch err {
-				case nil:
-					return x, nil
-				case EOS:
-				default:
-					return zero, err
-				}
-			}
-
-			x, err := xs.Next()
-			switch err {
-			case nil:
-				batch = f(x)
-			case EOS:
-				return zero, EOS
-			default:
-				return zero, err
-			}
-		}
+	return PushFunc[B](func(yield func(B) bool) bool {
+		return xs.For(func(a A) bool {
+			return f(a).For(yield) == nil
+		}) == nil
 	})
 }
 
@@ -122,169 +174,150 @@ func Sum[A fun.Number](xs Stream[A]) A {
 }
 
 // Chunked groups elements by n and produces a stream of slices.
+// Produced chunks must not be retained.
 func Chunked[A any](xs Stream[A], n int) Stream[[]A] {
 	if n <= 0 {
 		panic(fmt.Sprintf("Chunk must be of positive size, but %d given", n))
 	}
 
-	return StreamFunc[[]A](func() ([]A, error) {
-		res := make([]A, 0, n)
-		for i := 0; i < n; i++ {
-			x, err := xs.Next()
-			switch err {
-			case nil:
-				res = append(res, x)
-			case EOS:
-				if len(res) == 0 {
-					return nil, EOS
+	return PushFunc[[]A](func(f func([]A) bool) bool {
+		chunk := make([]A, 0, n)
+		if err := xs.For(func(a A) bool {
+			chunk = append(chunk, a)
+			if len(chunk) == n {
+				if !f(chunk) {
+					return false
 				}
 
-				return res, nil
-			default:
-				return res, err
+				chunk = chunk[:0]
 			}
+
+			return true
+		}); err != nil {
+			return false
 		}
 
-		return res, nil
+		return len(chunk) == 0 || f(chunk)
 	})
 }
 
 // Intersperse adds a separator after each stream element.
 func Intersperse[A any](xs Stream[A], sep A) Stream[A] {
-	isSep := false
-	ended := false
-	var zero A
-	return StreamFunc[A](func() (A, error) {
-		if ended {
-			return zero, EOS
-		}
+	return PushFunc[A](func(yield func(A) bool) bool {
+		isFirst := true
+		return xs.For(func(a A) bool {
+			if !isFirst && !yield(sep) {
+				return false
+			}
 
-		if isSep {
-			isSep = false
-			return sep, nil
-		}
+			isFirst = false
 
-		isSep = true
-		switch x, err := xs.Next(); err {
-		case nil:
-			return x, nil
-		case EOS:
-			ended = true
-			isSep = false
-			return zero, EOS
-		default:
-			return zero, err
-		}
+			return yield(a)
+		}) == nil
+	})
+}
+
+func Keys[K, V any](xs Stream2[K, V]) Stream[K] {
+	return PushFunc[K](func(yield func(K) bool) bool {
+		return xs.For(func(k K, _ V) bool {
+			return yield(k)
+		}) == nil
+	})
+}
+
+func Values[K, V any](xs Stream2[K, V]) Stream[V] {
+	return PushFunc[V](func(yield func(V) bool) bool {
+		return xs.For(func(_ K, v V) bool {
+			return yield(v)
+		}) == nil
 	})
 }
 
 // Repeat appends the same stream infinitely.
 func Repeat[A any](xs Stream[A]) Stream[A] {
-	buf := []A{}
-	var ierr error
-X:
-	for {
-		x, err := xs.Next()
-		switch err {
-		case nil:
-			buf = append(buf, x)
-		case EOS:
-			break X
-		default:
-			ierr = err
-			break X
+	return PushFunc[A](func(yield func(A) bool) bool {
+		for {
+			if err := xs.For(func(a A) bool {
+				return yield(a)
+			}); err != nil {
+				return false
+			}
 		}
-	}
-
-	var zero A
-	i := 0
-	return StreamFunc[A](func() (A, error) {
-		if ierr != nil {
-			return zero, ierr
-		}
-
-		res := buf[i]
-		i = (i + 1) % len(buf)
-		return res, nil
 	})
 }
 
 // Take cuts the stream after n elements.
 func Take[A any](xs Stream[A], n int) Stream[A] {
 	if n < 0 {
-		panic(fmt.Sprintf("Cannot take negative number of elements, concretely %d", n))
+		panic(fmt.Sprintf("Take size must be non-negative, but %d given", n))
 	}
 
-	took := 0
-	var zero A
-	return StreamFunc[A](func() (A, error) {
-		if took == n {
-			return zero, EOS
-		}
+	return PushFunc[A](func(yield func(A) bool) bool {
+		took := 0
+		return xs.For(func(a A) bool {
+			if took == n {
+				return false
+			}
 
-		took++
-		return xs.Next()
+			took++
+			return yield(a)
+		}) == nil
 	})
 }
 
 // Skip skips n elements in the stream.
 func Skip[A any](xs Stream[A], n int) Stream[A] {
-	for i := 0; i < n; i++ {
-		xs.Next()
-	}
+	return PushFunc[A](func(yield func(A) bool) bool {
+		skipped := 0
+		return xs.For(func(a A) bool {
+			if skipped == n {
+				return yield(a)
+			}
 
-	return xs
+			skipped++
+			return true
+		}) == nil
+	})
 }
 
 // Filter leaves in the stream only the elements that satisfy the given predicate.
 func Filter[A any](xs Stream[A], p func(A) bool) Stream[A] {
-	var zero A
-	return StreamFunc[A](func() (A, error) {
-		for {
-			switch x, err := xs.Next(); err {
-			case nil:
-				if p(x) {
-					return x, nil
-				}
-			case EOS:
-				return zero, EOS
-			default:
-				return zero, err
+	return PushFunc[A](func(yield func(A) bool) bool {
+		return xs.For(func(a A) bool {
+			if p(a) {
+				return yield(a)
 			}
-		}
+
+			return true
+		}) == nil
 	})
 }
 
 // Find searches for first element matching the predicate.
 func Find[A any](xs Stream[A], p func(A) bool) fun.Option[A] {
-	x, err := Filter(xs, p).Next()
-	return fun.FromNull(x, err == nil)
+	var res fun.Option[A]
+	xs.For(func(a A) bool {
+		if p(a) {
+			res = fun.Some(a)
+			return false
+		}
+
+		return true
+	})
+	return res
 }
 
 // TakeWhile takes elements while predicate is true.
 func TakeWhile[A any](xs Stream[A], p func(A) bool) Stream[A] {
-	var zero A
-	ended := false
-	return StreamFunc[A](func() (A, error) {
-		if ended {
-			return zero, EOS
-		}
-
-		for {
-			switch x, err := xs.Next(); err {
-			case nil:
-				if p(x) {
-					return x, nil
-				}
-
-				ended = true
-				return zero, EOS
-			case EOS:
-				return zero, EOS
-			default:
-				return zero, err
+	return PushFunc[A](func(yield func(A) bool) bool {
+		return xs.For(func(a A) bool {
+			if !p(a) {
+				return false
 			}
-		}
+
+			yield(a)
+			return true
+		}) == nil
 	})
 }
 
@@ -308,27 +341,22 @@ func Unique[A comparable](xs Stream[A]) Stream[A] {
 
 // MapFilter applies function to every element and leaves only elements that are not None.
 func MapFilter[A, B any](xs Stream[A], f func(A) fun.Option[B]) Stream[B] {
-	var zero B
-	return StreamFunc[B](func() (B, error) {
-		for {
-			switch x, err := xs.Next(); err {
-			case nil:
-				y, ok := f(x).Unpack()
-				if ok {
-					return y, nil
-				}
-			case EOS:
-				return zero, EOS
-			default:
-				return zero, err
+	return PushFunc[B](func(yield func(B) bool) bool {
+		return xs.For(func(a A) bool {
+			if b, ok := f(a).Unpack(); ok {
+				return yield(b)
 			}
-		}
+
+			return true
+		}) == nil
 	})
 }
 
 // Paged makes stream from stream of pages of elements represented as slices.
 func Paged[A any](xs Stream[[]A]) Stream[A] {
-	return FlatMap(xs, FromSlice[A])
+	return FlatMap(xs, func(as []A) Stream[A] {
+		return FromMany(as...)
+	})
 }
 
 // // ScatterCopy copies stream into N streams with all source elements.
@@ -458,27 +486,3 @@ func Paged[A any](xs Stream[[]A]) Stream[A] {
 // 	}()
 // 	return res
 // }
-
-type generator[T any] struct {
-	ch chan T
-}
-
-func NewGenerator[T any](f func(func(T))) Stream[T] {
-	ch := make(chan T)
-	go func() {
-		f(func(t T) { ch <- t })
-		close(ch)
-	}()
-	return generator[T]{
-		ch: ch,
-	}
-}
-
-func (g generator[T]) Next() (T, error) {
-	res, ok := <-g.ch
-	if !ok {
-		return res, EOS
-	}
-
-	return res, nil
-}
