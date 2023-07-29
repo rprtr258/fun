@@ -48,9 +48,14 @@ func Reduce[A, B any](start A, op func(A, B) A, xs Stream[B]) A {
 	return acc
 }
 
-// Count consumes stream and returns it's length.
+// Count returns stream length.
 func Count[A any](xs Stream[A]) int {
 	return Sum(Map(xs, fun.Const[int, A](1)))
+}
+
+// Count2 returns stream length.
+func Count2[A, B any](xs Stream2[A, B]) int {
+	return Count(Keys(xs))
 }
 
 // Group groups elements by a function that returns a key.

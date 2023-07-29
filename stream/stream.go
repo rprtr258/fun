@@ -133,6 +133,14 @@ func Map[A, B any](xs Stream[A], f func(A) B) Stream[B] {
 	})
 }
 
+func Map2[A, B, C, D any](xs Stream2[A, B], f func(A, B) (C, D)) Stream2[C, D] {
+	return PushFunc2[C, D](func(yield func(C, D) bool) bool {
+		return xs.For(func(a A, b B) bool {
+			return yield(f(a, b))
+		}) != ErrBreak
+	})
+}
+
 // Chain appends another stream after the end of the first one.
 func Chain[A any](xss ...Stream[A]) Stream[A] {
 	return PushFunc[A](func(yield func(A) bool) bool {
@@ -217,19 +225,31 @@ func Intersperse[A any](xs Stream[A], sep A) Stream[A] {
 	})
 }
 
-func Keys[K, V any](xs Stream2[K, V]) Stream[K] {
-	return PushFunc[K](func(yield func(K) bool) bool {
-		return xs.For(func(k K, _ V) bool {
-			return yield(k)
+func Map1To2[K, V, T any](xs Stream[T], fn func(T) (K, V)) Stream2[K, V] {
+	return PushFunc2[K, V](func(yield func(K, V) bool) bool {
+		return xs.For(func(t T) bool {
+			return yield(fn(t))
 		}) == nil
 	})
 }
 
-func Values[K, V any](xs Stream2[K, V]) Stream[V] {
-	return PushFunc[V](func(yield func(V) bool) bool {
-		return xs.For(func(_ K, v V) bool {
-			return yield(v)
+func Map2To1[K, V, T any](xs Stream2[K, V], fn func(K, V) T) Stream[T] {
+	return PushFunc[T](func(yield func(T) bool) bool {
+		return xs.For(func(k K, v V) bool {
+			return yield(fn(k, v))
 		}) == nil
+	})
+}
+
+func Keys[K, V any](xs Stream2[K, V]) Stream[K] {
+	return Map2To1(xs, func(k K, _ V) K {
+		return k
+	})
+}
+
+func Values[K, V any](xs Stream2[K, V]) Stream[V] {
+	return Map2To1(xs, func(_ K, v V) V {
+		return v
 	})
 }
 
@@ -329,22 +349,35 @@ func DebugPrint[A any](prefix string, xs Stream[A]) Stream[A] {
 // Unique makes stream of unique elements.
 func Unique[A comparable](xs Stream[A]) Stream[A] {
 	seen := fun.NewSet[A]()
-	return MapFilter(xs, func(x A) fun.Option[A] {
-		if !seen.Contains(x) {
-			seen.Add(x)
-			return fun.Some(x)
+	var a A
+	return MapFilter(xs, func(x A) (A, bool) {
+		if seen.Contains(x) {
+			return a, false
 		}
 
-		return fun.None[A]()
+		seen.Add(x)
+		return x, true
 	})
 }
 
 // MapFilter applies function to every element and leaves only elements that are not None.
-func MapFilter[A, B any](xs Stream[A], f func(A) fun.Option[B]) Stream[B] {
+func MapFilter[A, B any](xs Stream[A], f func(A) (B, bool)) Stream[B] {
 	return PushFunc[B](func(yield func(B) bool) bool {
 		return xs.For(func(a A) bool {
-			if b, ok := f(a).Unpack(); ok {
+			if b, ok := f(a); ok {
 				return yield(b)
+			}
+
+			return true
+		}) == nil
+	})
+}
+
+func MapFilter2[A, B, C, D any](xs Stream2[A, B], f func(A, B) (C, D, bool)) Stream2[C, D] {
+	return PushFunc2[C, D](func(yield func(C, D) bool) bool {
+		return xs.For(func(a A, b B) bool {
+			if c, d, ok := f(a, b); ok {
+				return yield(c, d)
 			}
 
 			return true
