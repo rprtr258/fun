@@ -2,27 +2,28 @@ package fun
 
 import "encoding/json"
 
+// Option is either value or nothing.
 type Option[T any] struct {
-	value T
-	valid bool
+	Value T
+	Valid bool
 }
 
 func (o Option[T]) MarshalJSON() ([]byte, error) {
-	if !o.valid {
+	if !o.Valid {
 		return []byte("null"), nil
 	}
 
-	return json.Marshal(o.value)
+	return json.Marshal(o.Value)
 }
 
 func (o *Option[T]) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
-		o.valid = false
+		o.Valid = false
 		return nil
 	}
 
-	o.valid = true
-	return json.Unmarshal(data, &o.value)
+	o.Valid = true
+	return json.Unmarshal(data, &o.Value)
 }
 
 func Invalid[T any]() Option[T] {
@@ -31,36 +32,28 @@ func Invalid[T any]() Option[T] {
 
 func Valid[T any](t T) Option[T] {
 	return Option[T]{
-		value: t,
-		valid: true,
+		Value: t,
+		Valid: true,
 	}
 }
 
 func Optional[T any](value T, valid bool) Option[T] {
 	return Option[T]{
-		valid: valid,
-		value: value,
+		Value: value,
+		Valid: valid,
 	}
 }
 
-func (o Option[T]) Valid() bool {
-	return o.valid
-}
-
-func (o Option[T]) Unwrap() T {
-	return o.value
-}
-
 func (o Option[T]) Unpack() (T, bool) {
-	return o.value, o.valid
+	return o.Value, o.Valid
 }
 
 func (o Option[T]) Or(other Option[T]) Option[T] {
-	return If(o.valid, o, other)
+	return If(o.Valid, o, other)
 }
 
 func (o Option[T]) OrDefault(value T) T {
-	return If(o.valid, o.value, value)
+	return If(o.Valid, o.Value, value)
 }
 
 func FromPtr[T any](ptr *T) Option[T] {
@@ -72,23 +65,23 @@ func FromPtr[T any](ptr *T) Option[T] {
 }
 
 func (opt Option[T]) Ptr() *T {
-	if !opt.valid {
+	if !opt.Valid {
 		return nil
 	}
 
-	return &opt.value
+	return &opt.Value
 }
 
-func OptMap[T, R any](o Option[T], f func(T) R) Option[R] {
-	if !o.valid {
-		return Invalid[R]()
+func OptMap[I, O any](o Option[I], f func(I) O) Option[O] {
+	if !o.Valid {
+		return Invalid[O]()
 	}
-	return Valid(f(o.value))
+	return Valid(f(o.Value))
 }
 
-func OptFlatMap[T, R any](o Option[T], f func(T) Option[R]) Option[R] {
-	if !o.valid {
-		return Invalid[R]()
+func OptFlatMap[I, O any](o Option[I], f func(I) Option[O]) Option[O] {
+	if !o.Valid {
+		return Invalid[O]()
 	}
-	return f(o.value)
+	return f(o.Value)
 }
