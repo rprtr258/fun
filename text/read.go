@@ -4,60 +4,67 @@ package text
 import (
 	"bytes"
 	"io"
-	"log"
 
-	s "github.com/rprtr258/go-flow/v2/stream"
+	"github.com/rprtr258/fun"
+	"github.com/rprtr258/fun/iter"
 )
 
 const defaultChunkSize = 4 * 1024 // 4 KB
 
-// ReadByteChunks reads chunks of at most chunkSize byte size from the reader.
-func ReadByteChunks(reader io.Reader, chunkSize int) s.Stream[[]byte] {
-	res := make(chan []byte)
-	go func() {
-		buf := make([]byte, chunkSize)
+// ReadByteChunks read using buffer of chunkSize size
+func ReadByteChunks(r io.Reader, chunkSize int) iter.Seq[fun.Result[[]byte]] {
+	return func(yield func(r fun.Result[[]byte]) bool) bool {
+		b := make([]byte, chunkSize)
 		for {
-			n, err := reader.Read(buf)
-			res <- buf[:n]
+			n, err := r.Read(b)
+			if !yield(fun.Result[[]byte]{append([]byte(nil), b[:n]...), err, err == nil}) {
+				return false
+			}
 			if err != nil {
 				if err == io.EOF {
-					break
+					return true
 				}
-				log.Printf("Err during ReadByteChunks: %s", err.Error())
-				break
 			}
-			buf = make([]byte, chunkSize)
 		}
-		close(res)
-	}()
-	return res
+	}
 }
 
 // SplitBySeparator splits byte-chunk stream by the given separator.
-func SplitBySeparator(xs s.Stream[[]byte], sep byte) s.Stream[[]byte] {
-	res := make(chan []byte)
-	go func() {
+func SplitBySeparator(seq iter.Seq[[]byte], sep byte) iter.Seq[[]byte] {
+	return func(yield func([]byte) bool) bool {
 		var curBuf []byte
-		for chunk := range xs {
+		return seq(func(chunk []byte) bool {
 			curBuf = append(curBuf, chunk...)
 			for {
 				idx := bytes.IndexByte(curBuf, sep)
 				if idx == -1 {
 					break
 				}
-				res <- curBuf[:idx]
+				if !yield(curBuf[:idx]) {
+					return false
+				}
 				curBuf = curBuf[idx+1:]
 			}
-		}
-		res <- curBuf
-		close(res)
-	}()
-	return res
+			return true
+		}) && yield(curBuf)
+	}
 }
 
 // ReadLines reads text file line-by-line.
-func ReadLines(reader io.Reader) s.Stream[string] {
+func ReadLines(reader io.Reader) iter.Seq[string] {
 	chunks := ReadByteChunks(reader, defaultChunkSize)
-	rows := SplitBySeparator(chunks, '\n')
-	return s.Map(rows, func(x []byte) string { return string(x) })
+
+	pull, stop := iter.Pull(chunks)
+	defer stop()
+
+	rows := SplitBySeparator(func(yield func([]byte) bool) bool {
+		for r, ok := pull(); ok; r, ok = pull() {
+			if !r.IsLeft || !yield(r.Left) {
+				return false
+			}
+		}
+		return true
+	}, '\n')
+
+	return iter.Map(rows, func(x []byte) string { return string(x) })
 }

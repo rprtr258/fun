@@ -24,6 +24,9 @@ jobs:
           go test -v -cover ./... -coverprofile coverage.out -coverpkg ./...
           go tool cover -func coverage.out -o coverage.out
 
+      - name: Pull branch
+        run: git pull
+
       - name: Go Coverage Badge
         uses: tj-actions/coverage-badge-go@v1
         if: ${{ runner.os == 'Linux' && matrix.go == '1.18' }}
@@ -50,4 +53,4 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ github.token }}
-          branch: ${{ github.head_ref }}
+          branch: ${{ github.ref }}

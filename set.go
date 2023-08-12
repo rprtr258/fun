@@ -3,6 +3,15 @@ package fun
 // Set is a collection of distinct elements.
 type Set[A comparable] map[A]Unit
 
+func (s Set[A]) For(f func(A) bool) error {
+	for a := range s {
+		if !f(a) {
+			return nil
+		}
+	}
+	return nil
+}
+
 // NewSet creates new empty set.
 func NewSet[A comparable]() Set[A] {
 	return make(Set[A])
