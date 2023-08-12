@@ -1,11 +1,21 @@
-// Package fun provides reusable general-purpose functions (Const, Swap, Curry) and
-// data structures (Unit, Pair, Either).
 package fun
 
 import (
 	"fmt"
 	"log"
 )
+
+// Unit is a type that has only a single value.
+type Unit struct{}
+
+// Unit1 is the value of type Unit.
+var Unit1 = Unit{}
+
+// Pair is a data structure that has two values.
+type Pair[K, V any] struct {
+	K K
+	V V
+}
 
 // ToString converts the value to string.
 func ToString[A any](a A) string {
