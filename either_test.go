@@ -14,16 +14,6 @@ var (
 )
 
 func TestIsLeftRight(t *testing.T) {
-	assert.True(t, left.IsLeft(), right.IsRight())
-	assert.False(t, left.IsRight(), right.IsLeft())
-}
-
-func TestConsume(t *testing.T) {
-	var leftInt int
-	left.Consume(func(x int) { leftInt = x }, func(x int) { t.Fail() })
-	assert.Equal(t, leftInt, 1)
-
-	var rightInt int
-	right.Consume(func(x int) { t.Fail() }, func(x int) { rightInt = x })
-	assert.Equal(t, rightInt, 2)
+	assert.True(t, left.IsLeft)
+	assert.False(t, right.IsLeft)
 }

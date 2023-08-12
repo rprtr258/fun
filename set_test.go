@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/rprtr258/go-flow/v2/fun"
+	"github.com/rprtr258/fun"
 )
 
 func TestSet(t *testing.T) {

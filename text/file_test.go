@@ -9,9 +9,8 @@ package text
 
 // 	"github.com/stretchr/testify/assert"
 
-// 	"github.com/rprtr258/go-flow/v2/fun"
-// 	"github.com/rprtr258/go-flow/v2/result"
-// 	s "github.com/rprtr258/go-flow/v2/stream"
+// 	"github.com/rprtr258/fun"
+// 	s "github.com/rprtr258/fun/iter"
 // )
 
 // const exampleText = `

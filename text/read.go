@@ -5,20 +5,19 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/rprtr258/go-flow/v2/result"
-	"github.com/rprtr258/go-flow/v2/stream"
-	s "github.com/rprtr258/go-flow/v2/stream"
+	"github.com/rprtr258/fun"
+	"github.com/rprtr258/fun/iter"
 )
 
 const defaultChunkSize = 4 * 1024 // 4 KB
 
 // ReadByteChunks read using buffer of chunkSize size
-func ReadByteChunks(r io.Reader, chunkSize int) s.Seq[result.Result[[]byte]] {
-	return func(yield func(r result.Result[[]byte]) bool) bool {
+func ReadByteChunks(r io.Reader, chunkSize int) iter.Seq[fun.Result[[]byte]] {
+	return func(yield func(r fun.Result[[]byte]) bool) bool {
 		b := make([]byte, chunkSize)
 		for {
 			n, err := r.Read(b)
-			if !yield(result.FromGoResult(append([]byte(nil), b[:n]...), err)) {
+			if !yield(fun.Result[[]byte]{append([]byte(nil), b[:n]...), err, err == nil}) {
 				return false
 			}
 			if err != nil {
@@ -31,7 +30,7 @@ func ReadByteChunks(r io.Reader, chunkSize int) s.Seq[result.Result[[]byte]] {
 }
 
 // SplitBySeparator splits byte-chunk stream by the given separator.
-func SplitBySeparator(seq s.Seq[[]byte], sep byte) s.Seq[[]byte] {
+func SplitBySeparator(seq iter.Seq[[]byte], sep byte) iter.Seq[[]byte] {
 	return func(yield func([]byte) bool) bool {
 		var curBuf []byte
 		return seq(func(chunk []byte) bool {
@@ -52,20 +51,20 @@ func SplitBySeparator(seq s.Seq[[]byte], sep byte) s.Seq[[]byte] {
 }
 
 // ReadLines reads text file line-by-line.
-func ReadLines(reader io.Reader) s.Seq[string] {
+func ReadLines(reader io.Reader) iter.Seq[string] {
 	chunks := ReadByteChunks(reader, defaultChunkSize)
 
-	pull, stop := stream.Pull(chunks)
+	pull, stop := iter.Pull(chunks)
 	defer stop()
 
 	rows := SplitBySeparator(func(yield func([]byte) bool) bool {
 		for r, ok := pull(); ok; r, ok = pull() {
-			if b, err := r.Unpack(); err != nil || !yield(b) {
+			if !r.IsLeft || !yield(r.Left) {
 				return false
 			}
 		}
 		return true
 	}, '\n')
 
-	return s.Map(rows, func(x []byte) string { return string(x) })
+	return iter.Map(rows, func(x []byte) string { return string(x) })
 }

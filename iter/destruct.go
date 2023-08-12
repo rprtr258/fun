@@ -60,12 +60,17 @@ func Sum[A fun.Number](xs Seq[A]) A {
 }
 
 // Count returns seq length.
-func Count[A any](seq Seq[A]) int {
-	return Sum(Map(seq, fun.Const[int, A](1)))
+func Count[V any](seq Seq[V]) int {
+	res := 0
+	seq(func(V) bool {
+		res++
+		return true
+	})
+	return res
 }
 
 // Group groups elements by a function that returns a key.
-func Group[V any, K comparable](seq Seq[V], by func(V) K) map[K][]V {
+func Group[K comparable, V any](seq Seq[V], by func(V) K) map[K][]V {
 	res := make(map[K][]V)
 	seq(func(v V) bool {
 		key := by(v)
@@ -86,13 +91,13 @@ func GroupAggregate[A, B any, K comparable](seq Seq[A], by func(A) K, aggregate 
 }
 
 // ToCounterBy consumes the seq and returns Counter with count of how many times each key was seen.
-func ToCounterBy[A any, K comparable](seq Seq[A], by func(A) K) fun.Counter[K] {
-	return GroupAggregate(seq, by, func(ys []A) int { return len(ys) })
+func ToCounterBy[K comparable, V any](seq Seq[V], by func(V) K) fun.Counter[K] {
+	return GroupAggregate(seq, by, func(ys []V) int { return len(ys) })
 }
 
 // CollectCounter consumes the seq makes Counter with count of how many times each element was seen.
-func CollectCounter[A comparable](seq Seq[A]) fun.Counter[A] {
-	return ToCounterBy(seq, fun.Identity[A])
+func CollectCounter[V comparable](seq Seq[V]) fun.Counter[V] {
+	return ToCounterBy(seq, func(v V) V { return v })
 }
 
 // Any consumes the seq and checks if any of the seq elements matches the predicate.

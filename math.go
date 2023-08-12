@@ -9,7 +9,9 @@ func Min[T constraints.Ordered](xs ...T) T {
 
 	min := xs[0]
 	for i := 1; i < len(xs); i++ {
-		min = If(xs[i] < min, xs[i], min)
+		if xs[i] < min {
+			min = xs[i]
+		}
 	}
 	return min
 }
@@ -21,7 +23,9 @@ func Max[T constraints.Ordered](xs ...T) T {
 
 	max := xs[0]
 	for i := 1; i < len(xs); i++ {
-		max = If(xs[i] > max, xs[i], max)
+		if xs[i] > max {
+			max = xs[i]
+		}
 	}
 	return max
 }

@@ -44,8 +44,12 @@ func FlatMap[I, O any](seq Seq[I], f func(I) Seq[O]) Seq[O] {
 }
 
 // Flatten simplifies a stream of streams to just the stream of values by concatenating all inner streams.
-func Flatten[A any](xs Seq[Seq[A]]) Seq[A] {
-	return FlatMap(xs, fun.Identity[Seq[A]])
+func Flatten[V any](seqseq Seq[Seq[V]]) Seq[V] {
+	return func(yield func(V) bool) bool {
+		return seqseq(func(seq Seq[V]) bool {
+			return seq(yield)
+		})
+	}
 }
 
 // Chunked groups elements by n and produces a stream of slices.
@@ -162,17 +166,20 @@ func Filter[V any](seq Seq[V], p func(V) bool) Seq[V] {
 }
 
 // Find searches for first element matching the predicate.
-func Find[A any](xs Seq[A], p func(A) bool) fun.Option[A] {
-	var res fun.Option[A]
+func Find[A any](xs Seq[A], p func(A) bool) (A, bool) {
+	var (
+		res A
+		ok  bool
+	)
 	xs(func(a A) bool {
 		if p(a) {
-			res = fun.Some(a)
+			res, ok = a, true
 			return false
 		}
 
 		return true
 	})
-	return res
+	return res, ok
 }
 
 // TakeWhile takes elements while predicate is true.
@@ -189,9 +196,14 @@ func TakeWhile[A any](xs Seq[A], p func(A) bool) Seq[A] {
 	}
 }
 
-// DebugPrint prints every processed element, without changing it.
-func DebugPrint[A any](prefix string, xs Seq[A]) Seq[A] {
-	return Map(xs, fun.Debug[A](prefix))
+// DebugSeq prints every processed element, without changing it.
+func DebugSeq[A any](xs Seq[A]) Seq[A] {
+	return Map(xs, fun.Debug[A])
+}
+
+// DebugSeqP prints every processed element, without changing it.
+func DebugSeqP[A any](prefix string, xs Seq[A]) Seq[A] {
+	return Map(xs, fun.DebugP[A](prefix))
 }
 
 // Unique makes stream of unique elements.

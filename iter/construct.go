@@ -3,8 +3,9 @@ package iter
 // functions to make Stream from something that is not stream
 
 import (
-	"github.com/rprtr258/fun/result"
 	"golang.org/x/exp/constraints"
+
+	"github.com/rprtr258/fun"
 )
 
 func FromInt(n int) Seq[int] {
@@ -19,26 +20,26 @@ func FromInt(n int) Seq[int] {
 	}
 }
 
-func FromPullFunc[T any](sf func() (T, error)) Seq[result.Result[T]] {
-	return func(yield func(r result.Result[T]) bool) bool {
+func FromPullFunc[T any](sf func() (T, error)) Seq[fun.Result[T]] {
+	return func(yield func(r fun.Result[T]) bool) bool {
 		for {
 			x, err := sf()
 			if err != nil {
-				yield(result.FromGoResult(x, err))
+				yield(fun.Result[T]{x, err, false})
 				return true
 			}
 
-			if !yield(result.Success(x)) {
+			if !yield(fun.Result[T]{x, nil, true}) {
 				return false
 			}
 		}
 	}
 }
 
-func FromSlice[T any](s []T) Seq[Pair[int, T]] {
-	return func(yield func(Pair[int, T]) bool) bool {
+func FromSlice[T any](s []T) Seq[fun.Pair[int, T]] {
+	return func(yield func(fun.Pair[int, T]) bool) bool {
 		for i, x := range s {
-			if !yield(Pair[int, T]{i, x}) {
+			if !yield(fun.Pair[int, T]{i, x}) {
 				return false
 			}
 		}
@@ -47,10 +48,10 @@ func FromSlice[T any](s []T) Seq[Pair[int, T]] {
 	}
 }
 
-func FromString(s string) Seq[Pair[int, rune]] {
-	return func(yield func(Pair[int, rune]) bool) bool {
+func FromString(s string) Seq[fun.Pair[int, rune]] {
+	return func(yield func(fun.Pair[int, rune]) bool) bool {
 		for i, r := range s {
-			if !yield(Pair[int, rune]{i, r}) {
+			if !yield(fun.Pair[int, rune]{i, r}) {
 				return false
 			}
 		}
@@ -59,10 +60,10 @@ func FromString(s string) Seq[Pair[int, rune]] {
 	}
 }
 
-func FromDict[K comparable, V any](d map[K]V) Seq[Pair[K, V]] {
-	return func(yield func(Pair[K, V]) bool) bool {
+func FromDict[K comparable, V any](d map[K]V) Seq[fun.Pair[K, V]] {
+	return func(yield func(fun.Pair[K, V]) bool) bool {
 		for k, v := range d {
-			if !yield(Pair[K, V]{k, v}) {
+			if !yield(fun.Pair[K, V]{k, v}) {
 				return false
 			}
 		}

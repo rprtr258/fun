@@ -7,6 +7,29 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+// FromMap makes slice of key/value pairs from map.
+func FromMap[A comparable, B any](kv map[A]B) []Pair[A, B] {
+	kvs := make([]Pair[A, B], 0, len(kv))
+	for k, v := range kv {
+		kvs = append(kvs, Pair[A, B]{k, v})
+	}
+	return kvs
+}
+
+// Copy slice
+func Copy[T any](slice []T) []T {
+	res := make([]T, 0, len(slice))
+	copy(res, slice)
+	return res
+}
+
+// ReverseInplace reverses slice in place.
+func ReverseInplace[A any](xs []A) {
+	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 {
+		xs[i], xs[j] = xs[j], xs[i]
+	}
+}
+
 func Subslice[T any](slice []T, start, end int) []T {
 	if start >= end {
 		return nil
