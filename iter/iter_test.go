@@ -1,11 +1,11 @@
-package stream
+package iter
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/rprtr258/go-flow/v2/fun"
+	"github.com/rprtr258/fun"
 )
 
 func assertStream[T any](t *testing.T, s Seq[T], expected []T) {

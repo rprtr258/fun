@@ -1,9 +1,9 @@
-package stream
+package iter
 
 // functions to make something from Seq that is not Seq.
 
 import (
-	"github.com/rprtr258/go-flow/v2/fun"
+	"github.com/rprtr258/fun"
 )
 
 // ForEach invokes a simple function for each element of the seq.

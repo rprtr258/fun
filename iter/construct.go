@@ -1,9 +1,9 @@
-package stream
+package iter
 
 // functions to make Stream from something that is not stream
 
 import (
-	"github.com/rprtr258/go-flow/v2/result"
+	"github.com/rprtr258/fun/result"
 	"golang.org/x/exp/constraints"
 )
 

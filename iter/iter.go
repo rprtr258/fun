@@ -1,17 +1,13 @@
 // Package stream provides a way to construct data processing streams from smaller pieces.
-package stream
+package iter
 
 import (
 	"fmt"
 
-	"github.com/rprtr258/go-flow/v2/fun"
+	"github.com/rprtr258/fun"
 )
 
 type (
-	Pair[K, V any] struct {
-		K K
-		V V
-	}
 	Seq[V any] func(yield func(V) bool) bool
 )
 
@@ -96,14 +92,14 @@ func Intersperse[A any](xs Seq[A], sep A) Seq[A] {
 	}
 }
 
-func Keys[K, V any](xs Seq[Pair[K, V]]) Seq[K] {
-	return Map(xs, func(p Pair[K, V]) K {
+func Keys[K, V any](xs Seq[fun.Pair[K, V]]) Seq[K] {
+	return Map(xs, func(p fun.Pair[K, V]) K {
 		return p.K
 	})
 }
 
-func Values[K, V any](xs Seq[Pair[K, V]]) Seq[V] {
-	return Map(xs, func(p Pair[K, V]) V {
+func Values[K, V any](xs Seq[fun.Pair[K, V]]) Seq[V] {
+	return Map(xs, func(p fun.Pair[K, V]) V {
 		return p.V
 	})
 }
