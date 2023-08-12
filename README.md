@@ -3,7 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/rprtr258/go-flow)](https://goreportcard.com/report/github.com/rprtr258/go-flow)
 ![Go](https://github.com/rprtr258/go-flow/workflows/Test/badge.svg?branch=main)
 ![CodeQL](https://github.com/rprtr258/go-flow/workflows/CodeQL/badge.svg?branch=main)
-![Coverage](https://img.shields.io/badge/Coverage-82.9%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-50.3%25-yellow)
 
 The design is inspired by rust [iterators](https://doc.rust-lang.org/std/iter/trait.Iterator.html) and [Result](https://doc.rust-lang.org/std/result/enum.Result.html).
 
