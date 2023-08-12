@@ -51,3 +51,22 @@ func Debug[V any](v V) V {
 	log.Println(v)
 	return v
 }
+
+func Has[K comparable, V any](dict map[K]V, key K) bool {
+	_, ok := dict[key]
+	return ok
+}
+
+func Cond[R any](defaultValue R, cases ...func() (R, bool)) R {
+	for _, case_ := range cases {
+		if res, ok := case_(); ok {
+			return res
+		}
+	}
+
+	return defaultValue
+}
+
+func Ptr[T any](t T) *T {
+	return &t
+}
