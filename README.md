@@ -1,4 +1,4 @@
-# Stream and functional utilities
+# Iterator and functional utilities
 [![Go Reference](https://pkg.go.dev/badge/github.com/rprtr258/go-flow.svg)](https://pkg.go.dev/github.com/rprtr258/go-flow)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rprtr258/go-flow)](https://goreportcard.com/report/github.com/rprtr258/go-flow)
 ![Go](https://github.com/rprtr258/go-flow/workflows/Test/badge.svg?branch=main)
@@ -8,60 +8,51 @@
 The design is inspired by rust [iterators](https://doc.rust-lang.org/std/iter/trait.Iterator.html) and [Result](https://doc.rust-lang.org/std/result/enum.Result.html).
 
 ## Result processing
-Can be used with old functions:
-- returning Go style result/error
 ```go
-func OpenFile(name string) result.Result[*os.File] {
-	return result.FromGoResult(os.Open(name))
+func OpenFile(name string) fun.Result[*os.File] {
+	f, err := os.Open(name)
+	return fun.Result{f, err, err == nil}
 }
 
-func UnmarshalJson[J any](body []byte) r.Result[J] {
-	return r.Eval(func() (j J, err error) {
-		err = json.Unmarshal(body, &j)
-		return
-	})
+func UnmarshalJson[J any](body []byte) fun.Result[J] {
+	var j J
+	err := json.Unmarshal(body, &j)
+  return fun.Result{j, err, err == nil}
 }
 
-```
-- returning result/isValid
-```go
 // LookupEnv gets environment variable
 func LookupEnv(varName string) result.Result[string] {
-	return result.FromMaybe(os.LookupEnv(varName)).
-		ChangeErr(fmt.Errorf("env var %q is not defined", varName))
+	env, ok := os.LookupEnv(varName)
+	return fun.Result{env, fmt.Errorf("env var %q is not defined", varName), ok}
 }
 
 // LookupIntEnv gets environment variable and parses it to int
 func LookupIntEnv(varName string) result.Result[int] {
-	return result.FlatMap(
-		LookupEnv(varName),
-		result.ToKleisli(strconv.Atoi),
-	)
+	env, ok := os.LookupEnv(varName)
+	if !ok {
+		return fun.Result{"", fmt.Errorf("env var %q is not defined", varName), false}
+	}
+
+	res, err := strconv.Atoi(env)
+	return fun.Result{res, err, err == nil}
 }
-```
-- back to go style result/error
-```go
+
 func Process(x int) (int, error) (
-	result := // some go-flow processing using Result-s
-	return result.GoResult()
+	var result fun.Result = // some processing using fun.Result
+	return result.Left, result.Right
 }
 ```
-## Stream processing
-`Stream[A]` is stream of values of one type `A`. They can be finite or infinite. Work with streams is supposed to be divided into three steps:
-1. Create stream. Either from slice, map, channel, etc. or you can make stream using dedicated functions. Also you can implement `Stream[A]` interface to make any kind of stream you want to!
-2. Process stream. Generally when one stream is created using another, old stream should not be used:
-```go
-xs := // some stream
-ys := Map(xs, f)
-// don't use xs from now on
-```
-3. Destroy stream to single value.
+## Iter processing
+`Iter[V]` is iterator of values of type `V`. They can be finite or infinite. What can be done with iterators:
+1. Create iterator either from slice, map, etc. or you can make iterator using `func(yield func(T) bool) bool` function signature.
+2. Process iterator.
+3. Destroy iterator to single value.
 
 In such way you can build different pipelines. For example there is sample pipeline for counting users' memberships:
 
 ![sample flow](doc/flow.png)
 
-How to implement it using streams:
+How to implement it using iterators:
 ```go
 // Count how many groups users belong to. Groups are:
 //   - some community
@@ -71,13 +62,13 @@ func CountMemberships(communityID, userID, postID uint) fun.Counter[User] {
 	communityMembers := getCommunityMembers(communityID)
 	userFriends := getFriends(userID)
 	postLikers := getLikers(postID)
-	groupsStreams := stream.Gather([]stream.Stream[stream.Stream[User]]{
+	groupsSeqs := iter.Gather([]iter.Seq[iter.Seq[User]]{
 		communityMembers,
 		userFriends,
 		postLikers,
 	})
-	counters := stream.Map(chans, stream.CollectCounter[User])
-	resCounter := stream.Reduce(fun.NewCounter[User](), fun.CounterPlus[User], counters)
+	counters := iter.Map(chans, iter.CollectCounter[User])
+	resCounter := iter.Reduce(counters, fun.NewCounter[User](), fun.CounterPlus[User])
 	return resCounter
 }
 ```

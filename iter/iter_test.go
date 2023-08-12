@@ -251,3 +251,5 @@ func TestNewStream(t *testing.T) {
 		}
 	}), []int{1, 2, 3, 4, 5, 6, 7, 8, 9})
 }
+
+// TODO: test len(ToSlice) is always equal to Count
