@@ -8,14 +8,14 @@ import (
 	"github.com/rprtr258/go-flow/v2/fun"
 )
 
-func assertStream[T any](t *testing.T, s Stream[T], expected []T) {
+func assertStream[T any](t *testing.T, s Seq[T], expected []T) {
 	t.Helper()
-	assert.Equal(t, expected, CollectToSlice(s))
+	assert.Equal(t, expected, ToSlice(s))
 }
 
 var (
-	nats   = Generate(0, func(s int) int { return s + 1 })
-	nats10 = Take(nats, 10)
+	nats   = FromGenerator(0, func(s int) int { return s + 1 })
+	nats10 = FromMany(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 	mul2   = func(i int) int { return i * 2 }
 	isEven = func(i int) bool { return i%2 == 0 }
 )
@@ -25,17 +25,24 @@ func TestStream(t *testing.T) {
 }
 
 func TestGenerate(t *testing.T) {
-	powers2 := Generate(1, mul2)
-	assert.Equal(t, 1, Head(powers2).Unwrap())
-	assert.Equal(t, 512, Head(Skip(powers2, 9)).Unwrap())
+	powers2 := FromGenerator(1, mul2)
+
+	a, ok := Head(powers2)
+	assert.True(t, ok)
+	assert.Equal(t, 1, a)
+
+	b, ok := Head(Skip(powers2, 9))
+	assert.True(t, ok)
+	assert.Equal(t, 512, b)
 }
 
 func TestRepeat(t *testing.T) {
-	assertStream(
-		t,
-		Take(Repeat(nats10), 21),
-		[]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
-	)
+	base := FromMany(0, 1, 2)
+	assertStream(t, Take(Repeat(base), 7), []int{
+		0, 1, 2,
+		0, 1, 2,
+		0,
+	})
 }
 
 func TestNats10(t *testing.T) {
@@ -48,20 +55,26 @@ func TestSum(t *testing.T) {
 }
 
 func TestFlatMap(t *testing.T) {
-	nats3 := Take(nats10, 3)
-	assertStream(t, FlatMap(nats3, func(i int) Stream[int] {
-		return Map(nats3, func(j int) int {
-			return i + j
-		})
+	nats3 := func(yield func(int) bool) bool {
+		return yield(0) &&
+			yield(1) &&
+			yield(2)
+	}
+	assertStream(t, FlatMap(nats3, func(i int) Seq[int] {
+		return func(yield func(int) bool) bool {
+			return yield(i*3) &&
+				yield(i*4) &&
+				yield(i*5)
+		}
 	}), []int{
-		0, 1, 2,
-		1, 2, 3,
-		2, 3, 4,
+		0, 0, 0,
+		3, 4, 5,
+		6, 8, 10,
 	})
 }
 
 func TestFlatMap2(t *testing.T) {
-	floatsNested := FlatMap(nats10, func(i int) Stream[float32] {
+	floatsNested := FlatMap(nats10, func(i int) Seq[float32] {
 		return FromMany(float32(i), float32(2*i))
 	})
 	floats := Sum(floatsNested)
@@ -71,7 +84,7 @@ func TestFlatMap2(t *testing.T) {
 func TestChunks(t *testing.T) {
 	// chunks cant be retained which doesnt allow to use assertStream
 	i := 0
-	_ = Chunked(Take(nats, 19), 10).For(func(chunk []int) bool {
+	_ = Chunked(Take(nats, 19), 10)(func(chunk []int) bool {
 		switch i {
 		case 0:
 			assert.Equal(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, chunk)
@@ -86,7 +99,7 @@ func TestChunks(t *testing.T) {
 }
 
 func TestForEach(t *testing.T) {
-	powers2 := Generate(1, mul2)
+	powers2 := FromGenerator(1, mul2)
 	is := []int{}
 	ForEach(Take(powers2, 5), func(i int) {
 		is = append(is, i)
@@ -99,19 +112,13 @@ func TestFilter(t *testing.T) {
 	assert.Equal(t, 20, sumEven)
 }
 
-func TestSet(t *testing.T) {
-	intsDuplicated := FlatMap(nats10, func(i int) Stream[int] {
-		return Map(
-			nats10,
-			func(j int) int { return i + j },
-		)
-	})
-	intsSet := Unique(intsDuplicated)
-	assert.Equal(t, 19, Count(intsSet))
+func TestUnique(t *testing.T) {
+	intsSet := Unique(FromMany(0, 0, 1, 1, 1, 1, 2, 0, 1, 2, 2, 1, 0))
+	assert.Equal(t, 3, Count(intsSet))
 }
 
 func TestGroupBy(t *testing.T) {
-	intsDuplicated := FlatMap(nats10, func(i int) Stream[int] {
+	intsDuplicated := FlatMap(nats10, func(i int) Seq[int] {
 		return Map(nats10, func(j int) int { return i + j })
 	})
 	intsGroups := Group(intsDuplicated, fun.Identity[int])
@@ -122,13 +129,18 @@ func TestGroupBy(t *testing.T) {
 }
 
 func TestGrouped(t *testing.T) {
-	/* chunks by 3, skipping first 3 chunks:
-	[0, 1, 2]
-	[3, 4, 5]
-	[6, 7, 8]
-	[9]       <- taking this
+	/* chunks by 3, taking first 3 chunks:
+	[0, 1, 2] <-
+	[3, 4, 5] <-
+	[6, 7, 8] <-
+	[9]
 	*/
-	assertStream(t, Skip(Chunked(nats10, 3), 3), [][]int{{9}})
+	assertStream(t, Chunked(nats10, 3), [][]int{
+		{0, 1, 2},
+		{3, 4, 5},
+		{6, 7, 8},
+		{9},
+	})
 }
 
 func TestGroupByMapCount(t *testing.T) {
@@ -138,7 +150,7 @@ func TestGroupByMapCount(t *testing.T) {
 }
 
 func TestChain(t *testing.T) {
-	got := CollectToSlice(Chain(
+	got := ToSlice(Concat(
 		FromMany(1, 2),
 		FromMany(3, 4, 5),
 		FromMany(6),
@@ -147,7 +159,7 @@ func TestChain(t *testing.T) {
 }
 
 func TestFlatten(t *testing.T) {
-	got := CollectToSlice(Flatten(FromMany([]Stream[int]{
+	got := ToSlice(Flatten(FromMany([]Seq[int]{
 		FromMany(1, 2),
 		FromMany(3, 4, 5),
 		FromMany(6),
@@ -156,17 +168,17 @@ func TestFlatten(t *testing.T) {
 }
 
 func TestIntersperse(t *testing.T) {
-	got := CollectToSlice(Intersperse(FromMany(1, 2, 3, 4, 5), 0))
+	got := ToSlice(Intersperse(FromMany(1, 2, 3, 4, 5), 0))
 	assert.Equal(t, []int{1, 0, 2, 0, 3, 0, 4, 0, 5}, got)
 }
 
 func TestIntersperseEmpty(t *testing.T) {
-	got := CollectToSlice(Intersperse(NewStreamEmpty[int](), 0))
+	got := ToSlice(Intersperse(FromNothing[int](), 0))
 	assert.Equal(t, []int{}, got)
 }
 
 func TestIntersperseTwoElems(t *testing.T) {
-	got := CollectToSlice(Intersperse(FromMany(1, 2), 0))
+	got := ToSlice(Intersperse(FromMany(1, 2), 0))
 	assert.Equal(t, []int{1, 0, 2}, got)
 }
 
@@ -175,7 +187,7 @@ func TestSkip(t *testing.T) {
 }
 
 func TestSkipToEmpty(t *testing.T) {
-	got := CollectToSlice(Skip(FromMany(1, 2, 3), 100))
+	got := ToSlice(Skip(FromMany(1, 2, 3), 100))
 	assert.Equal(t, []int{}, got)
 }
 
@@ -204,13 +216,13 @@ func TestTakeWhile(t *testing.T) {
 }
 
 func TestFilterMap(t *testing.T) {
-	got := CollectToSlice(MapFilter(
+	got := ToSlice(MapFilter(
 		FromMany(2, 4, 6, 7, 8),
-		func(x int) fun.Option[int] {
+		func(x int) (int, bool) {
 			if x%2 == 1 {
-				return fun.None[int]()
+				return 0, false
 			}
-			return fun.Some(x / 2)
+			return x / 2, true
 		},
 	))
 	assert.Equal(t, []int{1, 2, 3, 4}, got)
@@ -306,11 +318,11 @@ func TestPaged(t *testing.T) {
 // }
 
 func TestRange(t *testing.T) {
-	assertStream(t, Range(0, 10, 3), []int{0, 3, 6, 9})
+	assertStream(t, FromRange(0, 10, 3), []int{0, 3, 6, 9})
 }
 
 func TestNewStream(t *testing.T) {
-	assertStream(t, NewGenerator(func(yield func(int)) {
+	assertStream(t, FromInfiniteGenerator(func(yield func(int)) {
 		yield(1)
 		yield(2)
 		yield(3)

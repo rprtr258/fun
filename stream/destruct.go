@@ -1,85 +1,80 @@
 package stream
 
-// functions to make something from Stream that is not Stream.
+// functions to make something from Seq that is not Seq.
 
 import (
 	"github.com/rprtr258/go-flow/v2/fun"
 )
 
-// ForEach invokes a simple function for each element of the stream.
-func ForEach[A any](xs Stream[A], f func(A)) {
-	_ = xs.For(func(a A) bool {
-		f(a)
+// ForEach invokes a simple function for each element of the seq.
+func ForEach[V any](seq Seq[V], f func(V)) {
+	seq(func(v V) bool {
+		f(v)
 		return true
 	})
 }
 
-// CollectToSlice executes the stream and collects all results to a slice.
-func CollectToSlice[A any](xs Stream[A]) []A {
-	slice := make([]A, 0, Count(xs))
-	ForEach(xs, func(a A) { slice = append(slice, a) })
+// ToSlice executes the seq and collects all results to a slice.
+func ToSlice[A any](seq Seq[A]) []A {
+	slice := make([]A, 0, Count(seq))
+	ForEach(seq, func(a A) { slice = append(slice, a) })
 	return slice
 }
 
-// CollectToSet executes the stream and collects all results to a set.
-func CollectToSet[A comparable](xs Stream[A]) fun.Set[A] {
+// ToSet executes the seq and collects all results to a set.
+func ToSet[A comparable](seq Seq[A]) fun.Set[A] {
 	set := make(fun.Set[A])
-	ForEach(xs, func(a A) { set[a] = fun.Unit1 })
+	ForEach(seq, func(a A) { set[a] = fun.Unit1 })
 	return set
 }
 
 // Head takes the first element if present.
-func Head[A any](xs Stream[A]) fun.Option[A] {
-	var res fun.Option[A]
-	xs.For(func(a A) bool {
-		res = fun.Some(a)
+func Head[V any](seq Seq[V]) (V, bool) {
+	var (
+		res V
+		ok  bool
+	)
+	seq(func(v V) bool {
+		res, ok = v, true
 		return false
 	})
-	return res
+	return res, ok
 }
 
-// Reduce reduces stream into one value using given operation.
-func Reduce[A, B any](start A, op func(A, B) A, xs Stream[B]) A {
+// Reduce reduces seq into one value using given operation.
+func Reduce[A, B any](start A, op func(A, B) A, seq Seq[B]) A {
 	acc := start
-	xs.For(func(b B) bool {
+	seq(func(b B) bool {
 		acc = op(acc, b)
 		return true
 	})
 	return acc
 }
 
-// Count returns stream length.
-func Count[A any](xs Stream[A]) int {
-	return Sum(Map(xs, fun.Const[int, A](1)))
+// Count returns seq length.
+func Count[A any](seq Seq[A]) int {
+	return Sum(Map(seq, fun.Const[int, A](1)))
 }
 
-// Count2 returns stream length.
-func Count2[A, B any](xs Stream2[A, B]) int {
-	return Count(Keys(xs))
+// Count2 returns seq length.
+func Count2[A, B any](seq Seq2[A, B]) int {
+	return Count(Keys(seq))
 }
 
 // Group groups elements by a function that returns a key.
-func Group[A any, K comparable](xs Stream[A], by func(A) K) map[K][]A {
-	res := make(map[K][]A)
-	ForEach(
-		xs,
-		func(a A) {
-			key := by(a)
-			vals, ok := res[key]
-			if ok {
-				vals = append(vals, a)
-				res[key] = vals
-			} else {
-				res[key] = []A{a}
-			}
-		},
-	)
+func Group[V any, K comparable](seq Seq[V], by func(V) K) map[K][]V {
+	res := make(map[K][]V)
+	seq(func(v V) bool {
+		key := by(v)
+		res[key] = append(res[key], v)
+		return true
+	})
 	return res
 }
 
 // GroupAggregate is a convenience function that groups and then maps the subslices.
-func GroupAggregate[A, B any, K comparable](xs Stream[A], by func(A) K, aggregate func([]A) B) map[K]B {
-	tmp := Group(xs, by)
+func GroupAggregate[A, B any, K comparable](seq Seq[A], by func(A) K, aggregate func([]A) B) map[K]B {
+	tmp := Group(seq, by)
 	res := make(map[K]B, len(tmp))
 	for k, v := range tmp {
 		res[k] = aggregate(v)
@@ -87,17 +82,17 @@ func GroupAggregate[A, B any, K comparable](xs Stream[A], by func(A) K, aggregat
 	return res
 }
 
-// ToCounterBy consumes the stream and returns Counter with count of how many times each key was seen.
-func ToCounterBy[A any, K comparable](xs Stream[A], by func(A) K) fun.Counter[K] {
-	return GroupAggregate(xs, by, func(ys []A) int { return len(ys) })
+// ToCounterBy consumes the seq and returns Counter with count of how many times each key was seen.
+func ToCounterBy[A any, K comparable](seq Seq[A], by func(A) K) fun.Counter[K] {
+	return GroupAggregate(seq, by, func(ys []A) int { return len(ys) })
 }
 
-// CollectCounter consumes the stream makes Counter with count of how many times each element was seen.
-func CollectCounter[A comparable](xs Stream[A]) fun.Counter[A] {
-	return ToCounterBy(xs, fun.Identity[A])
+// CollectCounter consumes the seq makes Counter with count of how many times each element was seen.
+func CollectCounter[A comparable](seq Seq[A]) fun.Counter[A] {
+	return ToCounterBy(seq, fun.Identity[A])
 }
 
-// Any consumes the stream and checks if any of the stream elements matches the predicate.
-func Any[A any](xs Stream[A], p func(A) bool) bool {
-	return Reduce(false, func(acc bool, a A) bool { return acc || p(a) }, xs)
+// Any consumes the seq and checks if any of the seq elements matches the predicate.
+func Any[A any](seq Seq[A], p func(A) bool) bool {
+	return Reduce(false, func(acc bool, a A) bool { return acc || p(a) }, seq)
 }

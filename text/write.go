@@ -10,7 +10,7 @@ import (
 var endline = "\n"
 
 // WriteByteChunks writes byte chunks to writer.
-func WriteByteChunks(writer io.Writer, xs s.Stream[[]byte]) {
+func WriteByteChunks(writer io.Writer, xs s.Seq[[]byte]) {
 	s.ForEach(
 		xs,
 		func(chunk []byte) {
@@ -25,13 +25,13 @@ func WriteByteChunks(writer io.Writer, xs s.Stream[[]byte]) {
 }
 
 // MapStringToBytes converts stream of strings to stream of byte chunks.
-func MapStringToBytes(stm s.Stream[string]) s.Stream[[]byte] {
+func MapStringToBytes(stm s.Seq[string]) s.Seq[[]byte] {
 	return s.Map(stm, func(s string) []byte { return []byte(s) })
 }
 
 // WriteLines creates a sink that receives strings and saves them to writer.
 // It adds \n after each line.
-func WriteLines(writer io.Writer, xs s.Stream[string]) {
+func WriteLines(writer io.Writer, xs s.Seq[string]) {
 	s.ForEach(
 		s.Intersperse(xs, endline),
 		func(chunk string) {
