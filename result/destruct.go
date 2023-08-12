@@ -42,7 +42,7 @@ func (r Result[A]) Consume(fSuccess func(A), fFail func(error)) {
 }
 
 // GoResult makes Go-style result or error.
-func (r Result[A]) GoResult() (A, error) {
+func (r Result[A]) Unpack() (A, error) {
 	if r.IsErr() {
 		var a A
 		return a, r.UnwrapErr()
