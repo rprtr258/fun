@@ -252,4 +252,11 @@ func TestNewStream(t *testing.T) {
 	}), []int{1, 2, 3, 4, 5, 6, 7, 8, 9})
 }
 
-// TODO: test len(ToSlice) is always equal to Count
+func TestCount_lenToSlice(t *testing.T) {
+	for i := 0; i < 100; i++ {
+		arr := [100]struct{}{}
+		seq1 := iter.FromMany(arr[:i]...)
+		seq2 := iter.FromMany(arr[:i]...)
+		assert.Equal(t, iter.Count(seq1), len(seq2.ToSlice()))
+	}
+}

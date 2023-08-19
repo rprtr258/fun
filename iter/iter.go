@@ -2,6 +2,7 @@
 package iter
 
 import (
+	"cmp"
 	"fmt"
 
 	"github.com/rprtr258/fun"
@@ -10,6 +11,50 @@ import (
 type (
 	Seq[V any] func(yield func(V) bool) bool
 )
+
+func (seq Seq[V]) Filter(p func(V) bool) Seq[V] {
+	return Filter(seq, p)
+}
+
+func (seq Seq[V]) Map(f func(V) V) Seq[V] {
+	return Map(seq, f)
+}
+
+func (seq Seq[V]) MapFilter(f func(V) (V, bool)) Seq[V] {
+	return MapFilter(seq, f)
+}
+
+func (seq Seq[V]) FlatMap(f func(V) Seq[V]) Seq[V] {
+	return FlatMap(seq, f)
+}
+
+func (seq Seq[V]) Take(n int) Seq[V] {
+	return Take(seq, n)
+}
+
+func (seq Seq[V]) Head() (V, bool) {
+	return Head(seq)
+}
+
+func (seq Seq[V]) ForEach(f func(V)) {
+	ForEach(seq, f)
+}
+
+func (seq Seq[V]) Any(p func(V) bool) bool {
+	return Any(seq, p)
+}
+
+func (seq Seq[V]) All(p func(V) bool) bool {
+	return All(seq, p)
+}
+
+func (seq Seq[V]) ToSlice() []V {
+	return ToSlice(seq)
+}
+
+func (seq Seq[V]) Count() int {
+	return Count(seq)
+}
 
 // Map converts values of the stream.
 func Map[I, O any](seq Seq[I], f func(I) O) Seq[O] {
@@ -32,6 +77,55 @@ func Concat[V any](seqs ...Seq[V]) Seq[V] {
 
 		return true
 	}
+}
+
+// MergeFunc merges two sequences of values ordered by the function f.
+// Values appear in the output once for each time they appear in x
+// and once for each time they appear in y.
+// When equal values appear in both sequences,
+// the output contains the values from x before the values from y.
+// If the two input sequences are not ordered by f,
+// the output sequence will not be ordered by f,
+// but it will still contain every value from x and y exactly once.
+func MergeFunc[V any](x, y Seq[V], f func(V, V) int) Seq[V] {
+	return func(yield func(V) bool) bool {
+		next, stop := Pull(y)
+		defer stop()
+		vy, ok := next()
+		if !x(func(vx V) bool {
+			for ok && f(vx, vy) > 0 {
+				if !yield(vy) {
+					return false
+				}
+				vy, ok = next()
+			}
+			return yield(vx)
+		}) {
+			return false
+		}
+
+		for ok {
+			if !yield(vy) {
+				return false
+			}
+			vy, ok = next()
+		}
+
+		return true
+	}
+}
+
+// Merge merges two sequences of ordered values.
+// Values appear in the output once for each time they appear in x
+// and once for each time they appear in y.
+// If the two input sequences are not ordered,
+// the output sequence will not be ordered,
+// but it will still contain every value from x and y exactly once.
+//
+// Merge is equivalent to calling MergeFunc with cmp.Compare[V]
+// as the ordering function.
+func Merge[V cmp.Ordered](x, y Seq[V]) Seq[V] {
+	return MergeFunc(x, y, cmp.Compare[V])
 }
 
 // FlatMap maps stream using function and concatenates result streams into one.

@@ -1,6 +1,6 @@
 module github.com/rprtr258/fun
 
-go 1.18
+go 1.21
 
 require (
 	github.com/stretchr/testify v1.7.2

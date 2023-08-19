@@ -72,11 +72,6 @@ func FromDict[K comparable, V any](d map[K]V) Seq[fun.Pair[K, V]] {
 	}
 }
 
-// FromSingle returns a stream of one value.
-func FromSingle[V any](v V) Seq[V] {
-	return FromMany(v)
-}
-
 // FromMany returns a stream with all the given values.
 func FromMany[V any](vs ...V) Seq[V] {
 	return func(yield func(V) bool) bool {

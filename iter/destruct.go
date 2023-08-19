@@ -91,18 +91,35 @@ func GroupAggregate[A, B any, K comparable](seq Seq[A], by func(A) K, aggregate 
 }
 
 // ToCounterBy consumes the seq and returns Counter with count of how many times each key was seen.
-func ToCounterBy[K comparable, V any](seq Seq[V], by func(V) K) fun.Counter[K] {
+func ToCounterBy[K comparable, V any](seq Seq[V], by func(V) K) map[K]int {
 	return GroupAggregate(seq, by, func(ys []V) int { return len(ys) })
 }
 
-// CollectCounter consumes the seq makes Counter with count of how many times each element was seen.
-func CollectCounter[V comparable](seq Seq[V]) fun.Counter[V] {
+// ToCounter consumes the seq makes Counter with count of how many times each element was seen.
+func ToCounter[V comparable](seq Seq[V]) map[V]int {
 	return ToCounterBy(seq, func(v V) V { return v })
 }
 
-// Any consumes the seq and checks if any of the seq elements matches the predicate.
-func Any[A any](seq Seq[A], p func(A) bool) bool {
-	return Reduce(seq, false, func(acc bool, a A) bool { return acc || p(a) })
+// Any consumes the seq and checks if any of the seq elements matches the predicate
+func Any[V any](seq Seq[V], p func(V) bool) bool {
+	found := false
+	seq(func(v V) bool {
+		found = p(v)
+		return !found
+	})
+	return found
+}
+
+// All consumes the seq and checks if all of the seq elements match the predicate
+func All[V any](seq Seq[V], p func(V) bool) bool {
+	res := true
+	seq(func(v V) bool {
+		if !p(v) {
+			res = false
+		}
+		return res
+	})
+	return res
 }
 
 func Pull[V any](push Seq[V]) (pull func() (V, bool), stop func()) {
