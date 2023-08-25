@@ -2,10 +2,7 @@ module github.com/rprtr258/fun
 
 go 1.21
 
-require (
-	github.com/stretchr/testify v1.7.2
-	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
-)
+require github.com/stretchr/testify v1.7.2
 
 require (
 	github.com/davecgh/go-spew v1.1.0 // indirect

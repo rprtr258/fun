@@ -1,10 +1,9 @@
 package fun
 
 import (
+	"cmp"
 	"fmt"
-	"sort"
-
-	"golang.org/x/exp/constraints"
+	"slices"
 )
 
 // FromMap makes slice of key/value pairs from map.
@@ -78,9 +77,9 @@ func Any[T any](slice []T, condition func(T) bool) bool {
 	return false
 }
 
-func SortBy[T any, R constraints.Ordered](slice []T, by func(T) R) {
-	sort.Slice(slice, func(i, j int) bool {
-		return by(slice[i]) < by(slice[j])
+func SortBy[T any, R cmp.Ordered](slice []T, by func(T) R) {
+	slices.SortFunc(slice, func(i, j T) int {
+		return cmp.Compare(by(i), by(j))
 	})
 }
 

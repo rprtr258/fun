@@ -1,9 +1,9 @@
 package iter
 
-// functions to make Stream from something that is not stream
+// functions to make Iter from something that is not Iter
 
 import (
-	"golang.org/x/exp/constraints"
+	"cmp"
 
 	"github.com/rprtr258/fun"
 )
@@ -103,7 +103,7 @@ func FromNothing[A any]() Seq[A] {
 }
 
 // FromRange makes stream starting with start, step equal to step and going up to end, but not including end.
-func FromRange[N constraints.Ordered](start, end, step N) Seq[N] {
+func FromRange[N cmp.Ordered](start, end, step N) Seq[N] {
 	return func(yield func(N) bool) bool {
 		for i := start; i < end; i += step {
 			if !yield(i) {
