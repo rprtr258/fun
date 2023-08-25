@@ -19,6 +19,31 @@ func Map[R, T any, F interface {
 	return res
 }
 
+func FilterMap[R, T any, F interface {
+	func(T) (R, bool) | func(T, int) (R, bool)
+}](slice []T, f F) []R {
+	res := []R{}
+	switch f := any(f).(type) {
+	case func(T) (R, bool):
+		for _, x := range slice {
+			y, ok := f(x)
+			if ok {
+				res = append(res, y)
+			}
+		}
+	case func(T, int) (R, bool):
+		for i, x := range slice {
+			y, ok := f(x, i)
+			if ok {
+				res = append(res, y)
+			}
+		}
+	default:
+		panic("unreachable")
+	}
+	return res
+}
+
 func MapDict[T comparable, R any](collection []T, dict map[T]R) []R {
 	result := make([]R, len(collection))
 
