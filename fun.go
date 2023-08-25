@@ -22,13 +22,6 @@ func Zero[T any]() T {
 	return zero
 }
 
-func If[T any](predicate bool, ifTrue, ifFalse T) T {
-	if predicate {
-		return ifTrue
-	}
-	return ifFalse
-}
-
 // ToString converts the value to string.
 func ToString[A any](a A) string {
 	return fmt.Sprintf("%v", a)

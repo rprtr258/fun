@@ -49,11 +49,11 @@ func (o Option[T]) Unpack() (T, bool) {
 }
 
 func (o Option[T]) Or(other Option[T]) Option[T] {
-	return If(o.Valid, o, other)
+	return IF(o.Valid, o, other)
 }
 
 func (o Option[T]) OrDefault(value T) T {
-	return If(o.Valid, o.Value, value)
+	return IF(o.Valid, o.Value, value)
 }
 
 func FromPtr[T any](ptr *T) Option[T] {
