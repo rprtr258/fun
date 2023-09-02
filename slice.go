@@ -3,6 +3,10 @@ package fun
 func Map[R, T any, F interface {
 	func(T) R | func(T, int) R
 }](slice []T, f F) []R {
+	if slice == nil {
+		return nil
+	}
+
 	res := make([]R, len(slice))
 	switch f := any(f).(type) {
 	case func(T) R:

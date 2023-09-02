@@ -18,8 +18,9 @@ todo: # check todos
 
 # run tests
 test:
-	go run gotest.tools/gotestsum@latest
-	# go test ./... -count=10 -race
+	@#go run gotest.tools/gotestsum@latest
+	gotestsum --format dots-v2
+	@# go test ./... -count=10 -race
 
 cover: # check opens test cover in browser
 	@go test -coverprofile=coverage.out ./...
