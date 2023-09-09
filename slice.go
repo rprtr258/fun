@@ -23,6 +23,29 @@ func Map[R, T any, F interface {
 	return res
 }
 
+func Filter[T any, F interface {
+	func(T) bool | func(T, int) bool
+}](slice []T, f F) []T {
+	res := []T{}
+	switch f := any(f).(type) {
+	case func(T) bool:
+		for _, x := range slice {
+			if f(x) {
+				res = append(res, x)
+			}
+		}
+	case func(T, int) bool:
+		for i, x := range slice {
+			if f(x, i) {
+				res = append(res, x)
+			}
+		}
+	default:
+		panic("unreachable")
+	}
+	return res
+}
+
 func FilterMap[R, T any, F interface {
 	func(T) (R, bool) | func(T, int) (R, bool) |
 		func(T) Option[R] | func(T, int) Option[R]
