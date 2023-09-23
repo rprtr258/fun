@@ -3,18 +3,20 @@ package fun
 // Set is a collection of distinct elements.
 type Set[A comparable] map[A]Unit
 
-func (s Set[A]) For(f func(A) bool) error {
-	for a := range s {
-		if !f(a) {
-			return nil
-		}
-	}
-	return nil
-}
-
 // NewSet creates new empty set.
 func NewSet[A comparable]() Set[A] {
 	return make(Set[A])
+}
+
+func (s Set[A]) Iter() func(func(A) bool) bool {
+	return func(yield func(A) bool) bool {
+		for a := range s {
+			if !yield(a) {
+				return false
+			}
+		}
+		return true
+	}
 }
 
 // Contains checks if element is in set.
@@ -24,13 +26,17 @@ func (s *Set[A]) Contains(a A) bool {
 }
 
 // Add adds element to the set. If it is already there, does nothing.
-func (s *Set[A]) Add(a A) {
-	(*s)[a] = Unit1
+func (s *Set[A]) Add(as ...A) {
+	for _, a := range as {
+		(*s)[a] = Unit1
+	}
 }
 
 // Remove removes element from set. If it is not there, does nothing.
-func (s *Set[A]) Remove(a A) {
-	delete(*s, a)
+func (s *Set[A]) Remove(as ...A) {
+	for _, a := range as {
+		delete(*s, a)
+	}
 }
 
 // Intersect finds set intersection.
@@ -42,4 +48,12 @@ func Intersect[A comparable](as, bs Set[A]) Set[A] {
 		}
 	}
 	return res
+}
+
+func SliceToSet[T comparable](slice []T) Set[T] {
+	set := make(Set[T], len(slice))
+	for _, elem := range slice {
+		set[elem] = Unit{}
+	}
+	return set
 }
