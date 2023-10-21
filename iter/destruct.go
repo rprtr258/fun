@@ -4,6 +4,7 @@ package iter
 
 import (
 	"github.com/rprtr258/fun"
+	"github.com/rprtr258/fun/set"
 )
 
 // ForEach invokes a simple function for each element of the seq.
@@ -22,9 +23,9 @@ func ToSlice[A any](seq Seq[A]) []A {
 }
 
 // ToSet executes the seq and collects all results to a set.
-func ToSet[A comparable](seq Seq[A]) fun.Set[A] {
-	set := make(fun.Set[A])
-	ForEach(seq, func(a A) { set[a] = fun.Unit1 })
+func ToSet[A comparable](seq Seq[A]) set.Set[A] {
+	set := set.New[A](0)
+	ForEach(seq, func(a A) { set.Add(a) })
 	return set
 }
 

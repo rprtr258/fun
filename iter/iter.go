@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/rprtr258/fun"
+	"github.com/rprtr258/fun/set"
 )
 
 type (
@@ -302,7 +303,7 @@ func DebugSeqP[A any](prefix string, xs Seq[A]) Seq[A] {
 
 // Unique makes stream of unique elements.
 func Unique[A comparable](xs Seq[A]) Seq[A] {
-	seen := fun.NewSet[A]()
+	seen := set.New[A](0)
 	var a A
 	return MapFilter(xs, func(x A) (A, bool) {
 		if seen.Contains(x) {
