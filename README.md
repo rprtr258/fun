@@ -1,8 +1,8 @@
 # Iterator and functional utilities
-[![Go Reference](https://pkg.go.dev/badge/github.com/rprtr258/go-flow.svg)](https://pkg.go.dev/github.com/rprtr258/go-flow)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rprtr258/go-flow)](https://goreportcard.com/report/github.com/rprtr258/go-flow)
-![Go](https://github.com/rprtr258/go-flow/workflows/Test/badge.svg?branch=main)
-![CodeQL](https://github.com/rprtr258/go-flow/workflows/CodeQL/badge.svg?branch=main)
+[![Go Reference](https://pkg.go.dev/badge/github.com/rprtr258/fun.svg)](https://pkg.go.dev/github.com/rprtr258/fun)
+[![Go Report Card](https://goreportcard.com/badge/github.com/rprtr258/fun)](https://goreportcard.com/report/github.com/rprtr258/fun)
+![Go](https://github.com/rprtr258/fun/workflows/Test/badge.svg?branch=main)
+![CodeQL](https://github.com/rprtr258/fun/workflows/CodeQL/badge.svg?branch=main)
 ![Coverage](https://img.shields.io/badge/Coverage-33.8%25-yellow)
 
 The design is inspired by rust [iterators](https://doc.rust-lang.org/std/iter/trait.Iterator.html) and [Result](https://doc.rust-lang.org/std/result/enum.Result.html).
