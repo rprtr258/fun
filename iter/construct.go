@@ -25,11 +25,11 @@ func FromPullFunc[T any](sf func() (T, error)) Seq[fun.Result[T]] {
 		for {
 			x, err := sf()
 			if err != nil {
-				yield(fun.Result[T]{x, err, false})
+				yield(fun.Result[T]{x, err})
 				return true
 			}
 
-			if !yield(fun.Result[T]{x, nil, true}) {
+			if !yield(fun.Result[T]{x, nil}) {
 				return false
 			}
 		}
