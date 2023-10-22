@@ -23,9 +23,6 @@ jobs:
           go test -v -cover ./... -coverprofile coverage.out -coverpkg ./...
           go tool cover -func coverage.out -o coverage.out
 
-      - name: Pull branch
-        run: git pull origin master
-
       - name: Go Coverage Badge
         uses: tj-actions/coverage-badge-go@v1
         if: ${{ runner.os == 'Linux' }}
