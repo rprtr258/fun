@@ -29,6 +29,7 @@ func ReverseInplace[A any](xs []A) {
 	}
 }
 
+// Subslice returns slice from start to end without panicking on out of bounds
 func Subslice[T any](slice []T, start, end int) []T {
 	if start >= end {
 		return nil
@@ -39,6 +40,7 @@ func Subslice[T any](slice []T, start, end int) []T {
 	return slice[start:end]
 }
 
+// Chunk divides slice into chunks of size chunkSize
 func Chunk[T any](slice []T, chunkSize int) [][]T {
 	if chunkSize <= 0 {
 		panic(fmt.Errorf("invalid chunkSize: %d", chunkSize))
@@ -51,6 +53,7 @@ func Chunk[T any](slice []T, chunkSize int) [][]T {
 	return res
 }
 
+// ConcatMap is like Map but concatenates results
 func ConcatMap[T, R any](slice []T, f func(T) []R) []R {
 	res := []R{}
 	for _, elem := range slice {
@@ -59,6 +62,7 @@ func ConcatMap[T, R any](slice []T, f func(T) []R) []R {
 	return res
 }
 
+// All returns true if all elements satisfy the condition
 func All[T any](slice []T, condition func(T) bool) bool {
 	for _, elem := range slice {
 		if !condition(elem) {
@@ -68,6 +72,7 @@ func All[T any](slice []T, condition func(T) bool) bool {
 	return true
 }
 
+// Any returns true if any element satisfies the condition
 func Any[T any](slice []T, condition func(T) bool) bool {
 	for _, elem := range slice {
 		if condition(elem) {
@@ -77,12 +82,14 @@ func Any[T any](slice []T, condition func(T) bool) bool {
 	return false
 }
 
+// SortBy sorts slice in place by given function
 func SortBy[T any, R cmp.Ordered](slice []T, by func(T) R) {
 	slices.SortFunc(slice, func(i, j T) int {
 		return cmp.Compare(by(i), by(j))
 	})
 }
 
+// GroupBy groups elements by key
 func GroupBy[T any, K comparable](slice []T, by func(T) K) map[K][]T {
 	res := map[K][]T{}
 	for _, elem := range slice {

@@ -9,9 +9,7 @@ import (
 	"github.com/rprtr258/fun/set"
 )
 
-type (
-	Seq[V any] func(yield func(V) bool) bool
-)
+type Seq[V any] func(yield func(V) bool) bool
 
 func (seq Seq[V]) Filter(p func(V) bool) Seq[V] {
 	return Filter(seq, p)

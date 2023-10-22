@@ -17,7 +17,7 @@ func ReadByteChunks(r io.Reader, chunkSize int) iter.Seq[fun.Result[[]byte]] {
 		b := make([]byte, chunkSize)
 		for {
 			n, err := r.Read(b)
-			if !yield(fun.Result[[]byte]{append([]byte(nil), b[:n]...), err, err == nil}) {
+			if !yield(fun.Result[[]byte]{append([]byte(nil), b[:n]...), err}) {
 				return false
 			}
 			if err != nil {
@@ -59,7 +59,7 @@ func ReadLines(reader io.Reader) iter.Seq[string] {
 
 	rows := SplitBySeparator(func(yield func([]byte) bool) bool {
 		for r, ok := pull(); ok; r, ok = pull() {
-			if !r.IsLeft || !yield(r.Left) {
+			if r.V != nil || !yield(r.K) {
 				return false
 			}
 		}

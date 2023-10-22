@@ -191,15 +191,24 @@ func Uniq[T comparable](collection []T) []T {
 	return res
 }
 
-// Contains returns true if an element is present in a collection.
-func Contains[T comparable](slice []T, needle T) bool {
-	for _, x := range slice {
-		if x == needle {
-			return true
+// Index returns first found element by predicate along with it's index
+func Index[T comparable](slice []T, find func(T) bool) (T, int, bool) {
+	for i, x := range slice {
+		if find(x) {
+			return x, i, true
 		}
 	}
 
-	return false
+	var zero T
+	return zero, -1, false
+}
+
+// Contains returns true if an element is present in a collection.
+func Contains[T comparable](slice []T, needle T) bool {
+	_, _, ok := Index(slice, func(x T) bool {
+		return x == needle
+	})
+	return ok
 }
 
 // SliceToMap returns a map containing key-value pairs provided by transform function applied to elements of the given slice.
