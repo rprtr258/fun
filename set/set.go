@@ -10,7 +10,7 @@ func New[T comparable](cap int) Set[T] {
 	return Set[T]{m: make(map[T]struct{}, cap)}
 }
 
-func NewFrom[T comparable](slice []T) Set[T] {
+func NewFrom[T comparable](slice ...T) Set[T] {
 	set := New[T](len(slice))
 	set.Add(slice...)
 	return set
