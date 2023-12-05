@@ -35,7 +35,7 @@ func TestMap_noIndex(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, test.expected, Map[int](test.slice, test.f))
+			assert.Equal(t, test.expected, Map[int](test.f, test.slice...))
 		})
 	}
 }

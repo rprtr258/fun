@@ -2,7 +2,7 @@ package fun
 
 func Map[R, T any, F interface {
 	func(T) R | func(T, int) R
-}](slice []T, f F) []R {
+}](f F, slice ...T) []R {
 	if slice == nil {
 		return nil
 	}
@@ -25,7 +25,7 @@ func Map[R, T any, F interface {
 
 func Filter[T any, F interface {
 	func(T) bool | func(T, int) bool
-}](slice []T, f F) []T {
+}](f F, slice ...T) []T {
 	res := []T{}
 	switch f := any(f).(type) {
 	case func(T) bool:
@@ -49,7 +49,7 @@ func Filter[T any, F interface {
 func FilterMap[R, T any, F interface {
 	func(T) (R, bool) | func(T, int) (R, bool) |
 		func(T) Option[R] | func(T, int) Option[R]
-}](slice []T, f F) []R {
+}](f F, slice ...T) []R {
 	res := []R{}
 	switch f := any(f).(type) {
 	case func(T) (R, bool):
@@ -82,13 +82,11 @@ func FilterMap[R, T any, F interface {
 	return res
 }
 
-func MapDict[T comparable, R any](collection []T, dict map[T]R) []R {
+func MapDict[T comparable, R any](dict map[T]R, collection ...T) []R {
 	result := make([]R, len(collection))
-
 	for i, item := range collection {
 		result[i] = dict[item]
 	}
-
 	return result
 }
 
@@ -97,7 +95,7 @@ func MapErr[R, T any, E interface {
 	comparable
 }, FE interface {
 	func(T) (R, E) | func(T, int) (R, E)
-}](slice []T, f FE) ([]R, E) {
+}](f FE, slice ...T) ([]R, E) {
 	res := make([]R, len(slice))
 	switch f := any(f).(type) {
 	case func(T) (R, E):
@@ -179,7 +177,7 @@ func FindKeyBy[K comparable, V any](dict map[K]V, predicate func(K, V) bool) (K,
 }
 
 // Uniq returns unique values of slice.
-func Uniq[T comparable](collection []T) []T {
+func Uniq[T comparable](collection ...T) []T {
 	res := make([]T, 0, len(collection))
 	seen := make(map[T]struct{}, len(collection))
 	for _, x := range collection {
@@ -192,7 +190,7 @@ func Uniq[T comparable](collection []T) []T {
 }
 
 // Index returns first found element by predicate along with it's index
-func Index[T comparable](slice []T, find func(T) bool) (T, int, bool) {
+func Index[T comparable](find func(T) bool, slice ...T) (T, int, bool) {
 	for i, x := range slice {
 		if find(x) {
 			return x, i, true
@@ -204,10 +202,10 @@ func Index[T comparable](slice []T, find func(T) bool) (T, int, bool) {
 }
 
 // Contains returns true if an element is present in a collection.
-func Contains[T comparable](slice []T, needle T) bool {
-	_, _, ok := Index(slice, func(x T) bool {
+func Contains[T comparable](needle T, slice ...T) bool {
+	_, _, ok := Index(func(x T) bool {
 		return x == needle
-	})
+	}, slice...)
 	return ok
 }
 
@@ -218,7 +216,7 @@ func Contains[T comparable](slice []T, needle T) bool {
 // Play: https://go.dev/play/p/WHa2CfMO3Lr
 func SliceToMap[K comparable, V, T any, F interface {
 	func(T) (K, V) | func(T, int) (K, V)
-}](slice []T, f F) map[K]V {
+}](f F, slice ...T) map[K]V {
 	res := make(map[K]V, len(slice))
 	switch f := any(f).(type) {
 	case func(T) (K, V):

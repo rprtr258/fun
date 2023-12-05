@@ -55,6 +55,10 @@ func (seq Seq[V]) Count() int {
 	return Count(seq)
 }
 
+func (seq Seq[V]) Chain(other Seq[V]) Seq[V] {
+	return Concat(seq, other)
+}
+
 // Map converts values of the stream.
 func Map[I, O any](seq Seq[I], f func(I) O) Seq[O] {
 	return func(yield func(O) bool) bool {

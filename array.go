@@ -16,7 +16,7 @@ func FromMap[A comparable, B any](kv map[A]B) []Pair[A, B] {
 }
 
 // Copy slice
-func Copy[T any](slice []T) []T {
+func Copy[T any](slice ...T) []T {
 	res := make([]T, 0, len(slice))
 	copy(res, slice)
 	return res
@@ -30,7 +30,7 @@ func ReverseInplace[A any](xs []A) {
 }
 
 // Subslice returns slice from start to end without panicking on out of bounds
-func Subslice[T any](slice []T, start, end int) []T {
+func Subslice[T any](start, end int, slice ...T) []T {
 	if start >= end {
 		return nil
 	}
@@ -41,20 +41,20 @@ func Subslice[T any](slice []T, start, end int) []T {
 }
 
 // Chunk divides slice into chunks of size chunkSize
-func Chunk[T any](slice []T, chunkSize int) [][]T {
+func Chunk[T any](chunkSize int, slice ...T) [][]T {
 	if chunkSize <= 0 {
 		panic(fmt.Errorf("invalid chunkSize: %d", chunkSize))
 	}
 
 	res := make([][]T, 0, len(slice)/chunkSize+1)
 	for i := 0; i < len(slice); i += chunkSize {
-		res = append(res, Subslice(slice, i, i+chunkSize))
+		res = append(res, Subslice(i, i+chunkSize, slice...))
 	}
 	return res
 }
 
 // ConcatMap is like Map but concatenates results
-func ConcatMap[T, R any](slice []T, f func(T) []R) []R {
+func ConcatMap[T, R any](f func(T) []R, slice ...T) []R {
 	res := []R{}
 	for _, elem := range slice {
 		res = append(res, f(elem)...)
@@ -63,7 +63,7 @@ func ConcatMap[T, R any](slice []T, f func(T) []R) []R {
 }
 
 // All returns true if all elements satisfy the condition
-func All[T any](slice []T, condition func(T) bool) bool {
+func All[T any](condition func(T) bool, slice ...T) bool {
 	for _, elem := range slice {
 		if !condition(elem) {
 			return false
@@ -73,7 +73,7 @@ func All[T any](slice []T, condition func(T) bool) bool {
 }
 
 // Any returns true if any element satisfies the condition
-func Any[T any](slice []T, condition func(T) bool) bool {
+func Any[T any](condition func(T) bool, slice ...T) bool {
 	for _, elem := range slice {
 		if condition(elem) {
 			return true
@@ -83,14 +83,14 @@ func Any[T any](slice []T, condition func(T) bool) bool {
 }
 
 // SortBy sorts slice in place by given function
-func SortBy[T any, R cmp.Ordered](slice []T, by func(T) R) {
+func SortBy[T any, R cmp.Ordered](by func(T) R, slice ...T) {
 	slices.SortFunc(slice, func(i, j T) int {
 		return cmp.Compare(by(i), by(j))
 	})
 }
 
 // GroupBy groups elements by key
-func GroupBy[T any, K comparable](slice []T, by func(T) K) map[K][]T {
+func GroupBy[T any, K comparable](by func(T) K, slice ...T) map[K][]T {
 	res := map[K][]T{}
 	for _, elem := range slice {
 		k := by(elem)

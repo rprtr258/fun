@@ -25,7 +25,7 @@ func TestChunk(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			got := fun.Chunk(test.slice, test.chunkSize)
+			got := fun.Chunk(test.chunkSize, test.slice...)
 			assert.Equal(t, test.want, got)
 		})
 	}
