@@ -11,20 +11,82 @@ The design is inspired by [samber/lo](https://github.com/samber/lo) and [iterato
 Root package `github.com/rprtr258/fun` provides common slice and functional utilities:
 
 ### slice
+
+<table>
+
+<thead>
+<th>Name</th><th>In</th><th>Out</th><th>Description</th>
+</thead>
+
+<tr>
+<td>
+
+`Map`
+</td>
+<td>
+
 ```go
-func Map[R, T any, F interface {
-	func(T) R | func(T, int) R
-}](f F, slice ...T) []R
+[T, R any]
+func(T) R | func(T, int) R
+...T
+```
+</td>
+<td>
 
-func Filter[T any, F interface {
-	func(T) bool | func(T, int) bool
-}](f F, slice ...T) []T
+```go
+[]R
+```
+</td>
+<td>Apply function to all elements and get slice with results</td>
+</tr>
 
-func FilterMap[R, T any, F interface {
-	func(T) (R, bool) | func(T, int) (R, bool) |
-		func(T) Option[R] | func(T, int) Option[R]
-}](f F, slice ...T) []R
+<tr>
+<td>
 
+`Filter`
+</td>
+<td>
+
+```go
+[T any]
+func(T) bool | func(T, int) bool
+...T
+```
+</td>
+<td>
+
+```go
+[]T
+```
+</td>
+<td>Filter slice elements using given predicate</td>
+</tr>
+
+<tr>
+<td>
+
+`FilterMap`
+</td>
+<td>
+
+```go
+[T, R any]
+func(T) (R, bool) | func(T, int) (R, bool)
+...T
+```
+</td>
+<td>
+
+```go
+[]R
+```
+</td>
+<td>Transform each element, leaving only those for which true is returned</td>
+</tr>
+
+</table>
+
+```go
 func MapDict[T comparable, R any](collection []T, dict map[T]R) []R
 
 func MapErr[R, T any, E interface {
