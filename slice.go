@@ -190,7 +190,7 @@ func Uniq[T comparable](collection ...T) []T {
 }
 
 // Index returns first found element by predicate along with it's index
-func Index[T comparable](find func(T) bool, slice ...T) (T, int, bool) {
+func Index[T any](find func(T) bool, slice ...T) (T, int, bool) {
 	for i, x := range slice {
 		if find(x) {
 			return x, i, true
