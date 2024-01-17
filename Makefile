@@ -19,7 +19,7 @@ todo: # check todos
 # run tests
 test:
 	@#go run gotest.tools/gotestsum@latest
-	gotestsum --format dots-v2
+	GOSUMDB=sum.golang.org GOEXPERIMENT=rangefunc gotestsum --format dots-v2
 	@# go test ./... -count=10 -race
 
 cover: # check opens test cover in browser

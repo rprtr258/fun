@@ -55,16 +55,12 @@ func TestSum(t *testing.T) {
 }
 
 func TestFlatMap(t *testing.T) {
-	nats3 := func(yield func(int) bool) bool {
-		return yield(0) &&
-			yield(1) &&
-			yield(2)
+	nats3 := func(yield func(int) bool) {
+		_ = !yield(0) || !yield(1) || !yield(2)
 	}
 	assertStream(t, iter.FlatMap(nats3, func(i int) iter.Seq[int] {
-		return func(yield func(int) bool) bool {
-			return yield(i*3) &&
-				yield(i*4) &&
-				yield(i*5)
+		return func(yield func(int) bool) {
+			_ = !yield(i*3) || !yield(i*4) || !yield(i*5)
 		}
 	}), []int{
 		0, 0, 0,
@@ -84,7 +80,7 @@ func TestFlatMap2(t *testing.T) {
 func TestChunks(t *testing.T) {
 	// chunks cant be retained which doesnt allow to use assertStream
 	i := 0
-	_ = iter.Chunked(iter.Take(nats, 19), 10)(func(chunk []int) bool {
+	iter.Chunked(iter.Take(nats, 19), 10)(func(chunk []int) bool {
 		switch i {
 		case 0:
 			assert.Equal(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, chunk)
@@ -135,7 +131,12 @@ func TestGrouped(t *testing.T) {
 	[6, 7, 8] <-
 	[9]
 	*/
-	assertStream(t, iter.Chunked(nats10, 3), [][]int{
+	s := iter.
+		Chunked(nats10, 3).
+		Map(func(chunk []int) []int {
+			return append([]int(nil), chunk...)
+		})
+	assertStream(t, s, [][]int{
 		{0, 1, 2},
 		{3, 4, 5},
 		{6, 7, 8},
@@ -217,15 +218,12 @@ func TestTakeWhile(t *testing.T) {
 }
 
 func TestFilterMap(t *testing.T) {
-	got := iter.ToSlice(iter.MapFilter(
-		iter.FromMany(2, 4, 6, 7, 8),
-		func(x int) (int, bool) {
-			if x%2 == 1 {
-				return 0, false
-			}
-			return x / 2, true
-		},
-	))
+	got := iter.
+		FromMany(2, 4, 6, 7, 8).
+		MapFilter(func(x int) (int, bool) {
+			return x / 2, x%2 == 0
+		}).
+		ToSlice()
 	assert.Equal(t, []int{1, 2, 3, 4}, got)
 }
 

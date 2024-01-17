@@ -54,11 +54,7 @@ func (t *OrderedMap[K, V]) Get(key K) (V, bool) {
 
 // Iter calls 'yield' on every node in the tree in order
 func (t *OrderedMap[K, V]) Iter() iter.Seq[fun.Pair[K, V]] {
-	return func(yield func(fun.Pair[K, V]) bool) bool {
-		return t.root.each(func(key K, val V) bool {
-			return yield(fun.Pair[K, V]{K: key, V: val})
-		})
-	}
+	return t.root.each
 }
 
 func (t *OrderedMap[K, V]) Kth(k int) (K, bool) {
@@ -158,13 +154,16 @@ func (n *node[K, V]) search(key K, less func(K, K) bool) *node[K, V] {
 	}
 }
 
-func (n *node[K, V]) each(fn func(key K, val V) bool) bool {
+func (n *node[K, V]) each(fn func(kv fun.Pair[K, V]) bool) {
 	if n == nil {
-		return true
+		return
 	}
-	return n.left.each(fn) &&
-		fn(n.key, n.value) &&
-		n.right.each(fn)
+
+	for kv := range iter.Concat(n.left.each, iter.FromMany(fun.Pair[K, V]{n.key, n.value}), n.right.each) {
+		if !fn(kv) {
+			return
+		}
+	}
 }
 
 func (n *node[K, V]) getHeight() int {
