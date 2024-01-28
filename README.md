@@ -1,90 +1,46 @@
+---
+layout:
+  title:
+    visible: true
+  description:
+    visible: false
+  tableOfContents:
+    visible: false
+  outline:
+    visible: false
+  pagination:
+    visible: false
+---
+
 # Iterator and functional utilities
-[![Go Reference](https://pkg.go.dev/badge/github.com/rprtr258/fun.svg)](https://pkg.go.dev/github.com/rprtr258/fun)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rprtr258/fun)](https://goreportcard.com/report/github.com/rprtr258/fun)
-![Go](https://github.com/rprtr258/fun/workflows/Test/badge.svg?branch=master)
-![CodeQL](https://github.com/rprtr258/fun/workflows/CodeQL/badge.svg?branch=master)
-![Coverage](https://img.shields.io/badge/Coverage-39.5%25-yellow)
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/rprtr258/fun.svg)](https://pkg.go.dev/github.com/rprtr258/fun) [![Go Report Card](https://goreportcard.com/badge/github.com/rprtr258/fun)](https://goreportcard.com/report/github.com/rprtr258/fun) ![Go](https://github.com/rprtr258/fun/workflows/Test/badge.svg?branch=master) ![CodeQL](https://github.com/rprtr258/fun/workflows/CodeQL/badge.svg?branch=master) ![Coverage](https://img.shields.io/badge/Coverage-39.5%-yellow)
 
 The design is inspired by [samber/lo](https://github.com/samber/lo) and [iterator proposal](https://github.com/golang/go/issues/61897).
 
 ## Root package
+
 Root package `github.com/rprtr258/fun` provides common slice and functional utilities:
 
 ### slice
 
-<table>
-
-<thead>
-<th>Name</th><th>In</th><th>Out</th><th>Description</th>
-</thead>
-
-<tr>
-<td>
-
-`Map`
-</td>
-<td>
-
-```go
-[T, R any]
+| Name        | In                                                                                                                      | Out                                                              | Description                                                           |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `Map`       | <pre class="language-go"><code class="lang-go">[T, R any]
 func(T) R | func(T, int) R
 ...T
-```
-</td>
-<td>
-
-```go
-[]R
-```
-</td>
-<td>Apply function to all elements and get slice with results</td>
-</tr>
-
-<tr>
-<td>
-
-`Filter`
-</td>
-<td>
-
-```go
-[T any]
+</code></pre>                 | <pre class="language-go"><code class="lang-go">[]R
+</code></pre> | Apply function to all elements and get slice with results             |
+| `Filter`    | <pre class="language-go"><code class="lang-go">[T any]
 func(T) bool | func(T, int) bool
 ...T
-```
-</td>
-<td>
-
-```go
-[]T
-```
-</td>
-<td>Filter slice elements using given predicate</td>
-</tr>
-
-<tr>
-<td>
-
-`FilterMap`
-</td>
-<td>
-
-```go
-[T, R any]
+</code></pre>              | <pre class="language-go"><code class="lang-go">[]T
+</code></pre> | Filter slice elements using given predicate                           |
+| `FilterMap` | <pre class="language-go"><code class="lang-go">[T, R any]
 func(T) (R, bool) | func(T, int) (R, bool)
 ...T
-```
-</td>
-<td>
-
-```go
-[]R
-```
-</td>
-<td>Transform each element, leaving only those for which true is returned</td>
-</tr>
-
-</table>
+</code></pre> | <pre class="language-go"><code class="lang-go">[]R
+</code></pre> | Transform each element, leaving only those for which true is returned |
 
 ```go
 func MapDict[T comparable, R any](collection []T, dict map[T]R) []R
@@ -157,6 +113,7 @@ func GroupBy[T any, K comparable](by func(T) K, slice ...T) map[K][]T
 ```
 
 ### cmp
+
 ```go
 // Min returns the minimum of the given values
 func Min[T cmp.Ordered](xs ...T) T
@@ -175,6 +132,7 @@ func MaxBy[T any, R cmp.Ordered](order func(T) R, xs ...T) T
 ```
 
 ### optional values
+
 ```go
 // Option is either value or nothing.
 type Option[T any] struct {
@@ -211,6 +169,7 @@ func OptFlatMap[I, O any](o Option[I], f func(I) Option[O]) Option[O]
 ```
 
 ### fp
+
 ```go
 // Pair is a data structure that has two values.
 type Pair[K, V any] struct {K K; V V}
@@ -238,6 +197,7 @@ func Pipe[T any](t T, endos ...func(T) T) T
 ```
 
 #### functional if
+
 ```go
 func IF[T any](predicate bool, ifTrue, ifFalse T) T
 
@@ -257,6 +217,7 @@ func (i ifElse[T]) ElseDeref(value *T) T
 ```
 
 #### functional switch
+
 ```go
 // Switch is a pure functional switch/case/default statement.
 func Switch[R any, T comparable](predicate T, defVal R) *switchCase[T, R]
@@ -271,6 +232,7 @@ func (s *switchCase[T, R]) End() R
 ```
 
 ## Iterators
+
 `github.com/rprtr258/fun/iter` introduces iterator primitives from which `Seq[T]` is basic:
 
 ```go
@@ -280,6 +242,7 @@ type Seq[V any] func(yield func(V) bool) bool
 Which is a function which accepts function to `yield` values from iteration. `yield` must return `false` when iteration must stop (analogous to `break`). Iterator function returns `true` if it yielded all values and no `break` happened, or `false` otherwise.
 
 Example iterator yielding numbers from 1 to `n`, including `n`:
+
 ```go
 func Range(n int) iter.Seq[int] {
 	return func(yield func(int) bool) bool {
@@ -294,4 +257,5 @@ func Range(n int) iter.Seq[int] {
 ```
 
 ## Set
+
 `github.com/rprtr258/fun/set` introduces `Set[T]` primitive for collections of unique `comparable` values.
