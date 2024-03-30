@@ -17,7 +17,7 @@ func ForEach[V any](seq Seq[V], f func(V)) {
 
 // ToSlice executes the seq and collects all results to a slice.
 func ToSlice[A any](seq Seq[A]) []A {
-	slice := make([]A, 0, Count(seq))
+	slice := make([]A, 0, seq)
 	for a := range seq {
 		slice = append(slice, a)
 	}
