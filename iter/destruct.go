@@ -17,10 +17,11 @@ func ForEach[V any](seq Seq[V], f func(V)) {
 
 // ToSlice executes the seq and collects all results to a slice.
 func ToSlice[A any](seq Seq[A]) []A {
-	slice := make([]A, 0, seq)
-	for a := range seq {
+	slice := make([]A, 0)
+	seq(func(a A) bool {
 		slice = append(slice, a)
-	}
+		return true
+	})
 	return slice
 }
 
@@ -165,11 +166,16 @@ func Pull[V any](push Seq[V]) (pull func() (V, bool), stop func()) {
 
 // Find searches for first element matching the predicate.
 func Find[A any](xs Seq[A], p func(A) bool) (A, bool) {
-	for a := range xs {
+	var aa A
+	found := false
+	xs(func(a A) bool {
 		if p(a) {
-			return a, true
+			found = true
+			aa = a
+			return false
 		}
-	}
+		return true
+	})
 
-	return *new(A), false
+	return aa, found
 }

@@ -62,11 +62,9 @@ func (seq Seq[V]) Chain(other Seq[V]) Seq[V] {
 // Map converts values of the stream.
 func Map[I, O any](seq Seq[I], f func(I) O) Seq[O] {
 	return func(yield func(O) bool) {
-		for a := range seq {
-			if !yield(f(a)) {
-				return
-			}
-		}
+		seq(func(a I) bool {
+			return yield(f(a))
+		})
 	}
 }
 
@@ -74,10 +72,13 @@ func Map[I, O any](seq Seq[I], f func(I) O) Seq[O] {
 func Concat[V any](seqs ...Seq[V]) Seq[V] {
 	return func(yield func(V) bool) {
 		for _, seq := range seqs {
-			for v := range seq {
-				if !yield(v) {
-					return
-				}
+			cont := true
+			seq(func(v V) bool {
+				cont = cont && yield(v)
+				return cont
+			})
+			if !cont {
+				return
 			}
 		}
 	}
@@ -96,17 +97,18 @@ func MergeFunc[V any](x, y Seq[V], f func(V, V) int) Seq[V] {
 		next, stop := Pull(y)
 		defer stop()
 		vy, ok := next()
-		for vx := range x {
+		x(func(vx V) bool {
 			for ok && f(vx, vy) > 0 {
 				if !yield(vy) {
-					return
+					return false
 				}
 				vy, ok = next()
 			}
 			if !yield(vx) {
-				return
+				return false
 			}
-		}
+			return true
+		})
 
 		for ; ok; vy, ok = next() {
 			if !yield(vy) {
@@ -132,26 +134,28 @@ func Merge[V cmp.Ordered](x, y Seq[V]) Seq[V] {
 // FlatMap maps stream using function and concatenates result streams into one.
 func FlatMap[I, O any](seq Seq[I], f func(I) Seq[O]) Seq[O] {
 	return func(yield func(O) bool) {
-		for in := range seq {
-			for out := range f(in) {
-				if !yield(out) {
-					return
-				}
-			}
-		}
+		seq(func(in I) bool {
+			cont := true
+			f(in)(func(out O) bool {
+				cont = cont && yield(out)
+				return cont
+			})
+			return cont
+		})
 	}
 }
 
 // Flatten simplifies a stream of streams to just the stream of values by concatenating all inner streams.
 func Flatten[V any](seqseq Seq[Seq[V]]) Seq[V] {
 	return func(yield func(V) bool) {
-		for seq := range seqseq {
-			for v := range seq {
-				if !yield(v) {
-					return
-				}
-			}
-		}
+		seqseq(func(seq Seq[V]) bool {
+			cont := true
+			seq(func(v V) bool {
+				cont = cont && yield(v)
+				return cont
+			})
+			return cont
+		})
 	}
 }
 
@@ -164,16 +168,17 @@ func Chunked[A any](xs Seq[A], n int) Seq[[]A] {
 
 	return func(yield func([]A) bool) {
 		chunk := make([]A, 0, n)
-		for a := range xs {
+		xs(func(a A) bool {
 			chunk = append(chunk, a)
 			if len(chunk) == n {
 				if !yield(chunk) {
-					return
+					return false
 				}
 
 				chunk = chunk[:0]
 			}
-		}
+			return true
+		})
 
 		if len(chunk) != 0 {
 			yield(chunk)
@@ -185,17 +190,19 @@ func Chunked[A any](xs Seq[A], n int) Seq[[]A] {
 func Intersperse[A any](xs Seq[A], sep A) Seq[A] {
 	return func(yield func(A) bool) {
 		isFirst := true
-		for a := range xs {
+		xs(func(a A) bool {
 			if !isFirst && !yield(sep) {
-				return
+				return false
 			}
 
 			isFirst = false
 
 			if !yield(a) {
-				return
+				return false
 			}
-		}
+
+			return true
+		})
 	}
 }
 
@@ -215,10 +222,13 @@ func Values[K, V any](xs Seq[fun.Pair[K, V]]) Seq[V] {
 func Repeat[A any](xs Seq[A]) Seq[A] {
 	return func(yield func(A) bool) {
 		for {
-			for x := range xs {
-				if !yield(x) {
-					return
-				}
+			cont := true
+			xs(func(x A) bool {
+				cont = cont && yield(x)
+				return cont
+			})
+			if !cont {
+				return
 			}
 		}
 	}
@@ -232,16 +242,18 @@ func Take[V any](xs Seq[V], n int) Seq[V] {
 
 	return func(yield func(V) bool) {
 		took := 0
-		for v := range xs {
+		xs(func(v V) bool {
 			if took == n {
-				return
+				return false
 			}
 
 			took++
 			if !yield(v) {
-				return
+				return false
 			}
-		}
+
+			return true
+		})
 	}
 }
 
@@ -249,37 +261,34 @@ func Take[V any](xs Seq[V], n int) Seq[V] {
 func Skip[A any](xs Seq[A], n int) Seq[A] {
 	return func(yield func(A) bool) {
 		skipped := 0
-		for a := range xs {
+		xs(func(a A) bool {
 			if skipped == n {
 				if !yield(a) {
-					return
+					return false
 				}
 			} else {
 				skipped++
 			}
-		}
+			return true
+		})
 	}
 }
 
 // Filter leaves in the stream only the elements that satisfy the given predicate.
 func Filter[V any](seq Seq[V], p func(V) bool) Seq[V] {
 	return func(yield func(V) bool) {
-		for a := range seq {
-			if p(a) && !yield(a) {
-				return
-			}
-		}
+		seq(func(a V) bool {
+			return !p(a) || yield(a)
+		})
 	}
 }
 
 // TakeWhile takes elements while predicate is true.
 func TakeWhile[A any](xs Seq[A], p func(A) bool) Seq[A] {
 	return func(yield func(A) bool) {
-		for a := range xs {
-			if !p(a) || !yield(a) {
-				return
-			}
-		}
+		xs(func(a A) bool {
+			return p(a) && yield(a)
+		})
 	}
 }
 
@@ -297,24 +306,25 @@ func DebugSeqP[A any](prefix string, xs Seq[A]) Seq[A] {
 func Unique[A comparable](xs Seq[A]) Seq[A] {
 	seen := set.New[A](0)
 	return func(yield func(A) bool) {
-		for x := range xs {
+		xs(func(x A) bool {
 			if !seen.Contains(x) {
 				if !yield(x) {
-					return
+					return false
 				}
 				seen.Add(x)
 			}
-		}
+			return true
+		})
 	}
 }
 
 // MapFilter applies function to every element and leaves only elements that are not None.
 func MapFilter[I, O any](seq Seq[I], f func(I) (O, bool)) Seq[O] {
 	return func(yield func(O) bool) {
-		for a := range seq {
-			if b, ok := f(a); ok && !yield(b) {
-			}
-		}
+		seq(func(a I) bool {
+			b, ok := f(a)
+			return !ok || yield(b)
+		})
 	}
 }
 

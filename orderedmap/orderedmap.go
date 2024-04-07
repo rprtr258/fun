@@ -159,11 +159,9 @@ func (n *node[K, V]) each(fn func(kv fun.Pair[K, V]) bool) {
 		return
 	}
 
-	for kv := range iter.Concat(n.left.each, iter.FromMany(fun.Pair[K, V]{n.key, n.value}), n.right.each) {
-		if !fn(kv) {
-			return
-		}
-	}
+	iter.Concat(n.left.each, iter.FromMany(fun.Pair[K, V]{n.key, n.value}), n.right.each)(func(kv fun.Pair[K, V]) bool {
+		return fn(kv)
+	})
 }
 
 func (n *node[K, V]) getHeight() int {

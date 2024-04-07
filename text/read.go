@@ -33,20 +33,20 @@ func ReadByteChunks(r io.Reader, chunkSize int) iter.Seq[fun.Result[[]byte]] {
 func SplitBySeparator(seq iter.Seq[[]byte], sep byte) iter.Seq[[]byte] {
 	return func(yield func([]byte) bool) {
 		var curBuf []byte
-		for chunk := range seq {
+		seq(func(chunk []byte) bool {
 			curBuf = append(curBuf, chunk...)
 			for {
 				idx := bytes.IndexByte(curBuf, sep)
 				if idx == -1 {
-					break
+					return false
 				}
 
 				if !yield(curBuf[:idx]) {
-					return
+					return true
 				}
 				curBuf = curBuf[idx+1:]
 			}
-		}
+		})
 
 		yield(curBuf)
 	}
