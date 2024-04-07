@@ -14,7 +14,7 @@ layout:
 
 # Iterator and functional utilities
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/rprtr258/fun.svg)](https://pkg.go.dev/github.com/rprtr258/fun) [![Go Report Card](https://goreportcard.com/badge/github.com/rprtr258/fun)](https://goreportcard.com/report/github.com/rprtr258/fun) ![Go](https://github.com/rprtr258/fun/workflows/Test/badge.svg?branch=master) ![CodeQL](https://github.com/rprtr258/fun/workflows/CodeQL/badge.svg?branch=master) ![Coverage](https://img.shields.io/badge/Coverage-39.5%-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-40.5%25-yellow)
 
 The design is inspired by [samber/lo](https://github.com/samber/lo) and [iterator proposal](https://github.com/golang/go/issues/61897).
 
