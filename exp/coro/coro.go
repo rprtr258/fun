@@ -86,6 +86,9 @@ func generator[T any](
 	})
 }
 
+// TODO: implement
+// this should be epoll-like function
+// also support timeout
 type GeneratorSet[T any] struct {
 	coros []Coro[struct{}, T]
 	done  []bool
