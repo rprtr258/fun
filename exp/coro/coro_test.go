@@ -12,7 +12,7 @@ func TestRange(t *testing.T) {
 		}
 	})
 	for i := 0; i < 10; i++ {
-		j, _ := myrange.resume(struct{}{})
+		j, _ := myrange.Resume(struct{}{})
 		if j != i {
 			t.Fatalf("expected %d, got %d", i, j)
 		}
@@ -46,7 +46,7 @@ func TestParser(t *testing.T) {
 	})
 
 	for _, b := range []byte(input) {
-		status, ok := parser.resume(b)
+		status, ok := parser.Resume(b)
 		switch {
 		case status == BadInput:
 			t.Fatal("bad input")
@@ -83,14 +83,14 @@ func filter(p int, next func(struct{}) (int, bool)) Coro[struct{}, int] {
 
 func TestPrimeSieve(t *testing.T) {
 	gen := counter()
-	t.Cleanup(gen.cancel)
+	t.Cleanup(gen.Cancel)
 
 	for _, pp := range [...]int{2, 3, 5, 7, 11, 13, 17, 19, 23, 29} {
-		p, _ := gen.resume(struct{}{})
+		p, _ := gen.Resume(struct{}{})
 		if p != pp {
 			t.Fatalf("expected %d, got %d", pp, p)
 		}
-		gen = filter(p, gen.resume)
+		gen = filter(p, gen.Resume)
 	}
 }
 
@@ -109,7 +109,7 @@ func TestCallUntilExhausted(t *testing.T) {
 		{"done", true},
 		{"", false},
 	} {
-		s, ok := gen.resume(struct{}{})
+		s, ok := gen.Resume(struct{}{})
 		if ok != step.bool || s != step.string {
 			t.Fatalf(`failed on step %d:
 s: expected %q, got %q

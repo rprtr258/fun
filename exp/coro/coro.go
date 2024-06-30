@@ -51,7 +51,7 @@ func New[In, Out any](
 	}
 }
 
-func (c Coro[In, Out]) resume(in In) (out Out, ok bool) {
+func (c Coro[In, Out]) Resume(in In) (out Out, ok bool) {
 	if !*c.running {
 		return
 	}
@@ -65,7 +65,7 @@ func (c Coro[In, Out]) resume(in In) (out Out, ok bool) {
 	return m.val, isrunning
 }
 
-func (c Coro[In, Out]) cancel() {
+func (c Coro[In, Out]) Cancel() {
 	e := fmt.Errorf("%w", ErrCanceled) // unique wrapper
 	c.cin <- msg[In]{panic: e}
 	m := <-c.cout
@@ -181,7 +181,7 @@ func (s *GeneratorSet2[T]) All() []result[T] {
 	wg.Add(len(s.coro))
 	for i, c := range s.coro {
 		go func(i int, c Coro[struct{}, T]) {
-			t, ok := c.resume(struct{}{})
+			t, ok := c.Resume(struct{}{})
 			res[i] = result[T]{t, ok}
 		}(i, c)
 	}

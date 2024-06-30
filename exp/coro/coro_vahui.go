@@ -59,7 +59,7 @@ func newPerfect(f func(system)) perfectCoro {
 func run(c perfectCoro) error {
 	response := syscallCompletion{}
 	for {
-		req, ok := c.resume(response)
+		req, ok := c.Resume(response)
 		if !ok {
 			return nil
 		}
