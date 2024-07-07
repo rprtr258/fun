@@ -1,5 +1,7 @@
 package fun
 
+import "github.com/rprtr258/fun/exp/zun"
+
 func Map[R, T any, F interface {
 	func(T) R | func(T, int) R
 }](f F, slice ...T) []R {
@@ -10,13 +12,9 @@ func Map[R, T any, F interface {
 	res := make([]R, len(slice))
 	switch f := any(f).(type) {
 	case func(T) R:
-		for i, x := range slice {
-			res[i] = f(x)
-		}
+		zun.Map(res, f, slice...)
 	case func(T, int) R:
-		for i, x := range slice {
-			res[i] = f(x, i)
-		}
+		zun.MapI(res, f, slice...)
 	default:
 		panic("unreachable")
 	}
@@ -26,20 +24,12 @@ func Map[R, T any, F interface {
 func Filter[T any, F interface {
 	func(T) bool | func(T, int) bool
 }](f F, slice ...T) []T {
-	res := []T{}
+	res := make([]T, 0, len(slice))
 	switch f := any(f).(type) {
 	case func(T) bool:
-		for _, x := range slice {
-			if f(x) {
-				res = append(res, x)
-			}
-		}
+		zun.Filter(res, f, slice...)
 	case func(T, int) bool:
-		for i, x := range slice {
-			if f(x, i) {
-				res = append(res, x)
-			}
-		}
+		zun.FilterI(res, f, slice...)
 	default:
 		panic("unreachable")
 	}
@@ -50,32 +40,20 @@ func FilterMap[R, T any, F interface {
 	func(T) (R, bool) | func(T, int) (R, bool) |
 		func(T) Option[R] | func(T, int) Option[R]
 }](f F, slice ...T) []R {
-	res := []R{}
+	res := make([]R, 0, len(slice))
 	switch f := any(f).(type) {
 	case func(T) (R, bool):
-		for _, x := range slice {
-			if y, ok := f(x); ok {
-				res = append(res, y)
-			}
-		}
+		zun.FilterMap(res, f, slice...)
 	case func(T, int) (R, bool):
-		for i, x := range slice {
-			if y, ok := f(x, i); ok {
-				res = append(res, y)
-			}
-		}
+		zun.FilterMapI(res, f, slice...)
 	case func(T) Option[R]:
-		for _, x := range slice {
-			if y, ok := f(x).Unpack(); ok {
-				res = append(res, y)
-			}
-		}
+		zun.FilterMap(res, func(x T) (R, bool) {
+			return f(x).Unpack()
+		}, slice...)
 	case func(T, int) Option[R]:
-		for i, x := range slice {
-			if y, ok := f(x, i).Unpack(); ok {
-				res = append(res, y)
-			}
-		}
+		zun.FilterMapI(res, func(x T, i int) (R, bool) {
+			return f(x, i).Unpack()
+		}, slice...)
 	default:
 		panic("unreachable")
 	}
@@ -90,36 +68,23 @@ func MapDict[T comparable, R any](dict map[T]R, collection ...T) []R {
 	return result
 }
 
-func MapErr[R, T any, E interface {
-	error
-	comparable
-}, FE interface {
-	func(T) (R, E) | func(T, int) (R, E)
-}](f FE, slice ...T) ([]R, E) {
+func MapErr[R, T any, F interface {
+	func(T) (R, error) | func(T, int) (R, error)
+}](f F, slice ...T) ([]R, error) {
 	res := make([]R, len(slice))
 	switch f := any(f).(type) {
-	case func(T) (R, E):
-		for i, x := range slice {
-			y, err := f(x)
-			if err != Zero[E]() {
-				return nil, err
-			}
-
-			res[i] = y
+	case func(T) (R, error):
+		if err := zun.MapErr(res, f, slice...); err != nil {
+			return nil, err
 		}
-	case func(T, int) (R, E):
-		for i, x := range slice {
-			y, err := f(x, i)
-			if err != Zero[E]() {
-				return nil, err
-			}
-
-			res[i] = y
+	case func(T, int) (R, error):
+		if err := zun.MapErrI(res, f, slice...); err != nil {
+			return nil, err
 		}
 	default:
 		panic("unreachable")
 	}
-	return res, Zero[E]()
+	return res, nil
 }
 
 func Deref[T any](ptr *T) T {
@@ -131,49 +96,31 @@ func Deref[T any](ptr *T) T {
 
 func MapToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) R) []R {
 	res := make([]R, 0, len(dict))
-	for k, v := range dict {
-		res = append(res, f(k, v))
-	}
+	zun.MapToSlice(res, dict, f)
 	return res
 }
 
 func MapFilterToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) (R, bool)) []R {
 	res := make([]R, 0, len(dict))
-	for k, v := range dict {
-		y, ok := f(k, v)
-		if !ok {
-			continue
-		}
-		res = append(res, y)
-	}
+	zun.MapFilterToSlice(res, dict, f)
 	return res
 }
 
 func Keys[K comparable, V any](dict map[K]V) []K {
 	res := make([]K, 0, len(dict))
-	for k := range dict {
-		res = append(res, k)
-	}
+	zun.Keys(res, dict)
 	return res
 }
 
 func Values[K comparable, V any](dict map[K]V) []V {
 	res := make([]V, 0, len(dict))
-	for _, v := range dict {
-		res = append(res, v)
-	}
+	zun.Values(res, dict)
 	return res
 }
 
 // FindKeyBy returns the key of the first element predicate returns truthy for.
 func FindKeyBy[K comparable, V any](dict map[K]V, predicate func(K, V) bool) (K, bool) {
-	for k, v := range dict {
-		if predicate(k, v) {
-			return k, true
-		}
-	}
-
-	return Zero[K](), false
+	return zun.FindKeyBy(dict, predicate)
 }
 
 // Uniq returns unique values of slice.
@@ -191,22 +138,12 @@ func Uniq[T comparable](collection ...T) []T {
 
 // Index returns first found element by predicate along with it's index
 func Index[T any](find func(T) bool, slice ...T) (T, int, bool) {
-	for i, x := range slice {
-		if find(x) {
-			return x, i, true
-		}
-	}
-
-	var zero T
-	return zero, -1, false
+	return zun.Index(find, slice...)
 }
 
 // Contains returns true if an element is present in a collection.
 func Contains[T comparable](needle T, slice ...T) bool {
-	_, _, ok := Index(func(x T) bool {
-		return x == needle
-	}, slice...)
-	return ok
+	return zun.Contains(needle, slice...)
 }
 
 // SliceToMap returns a map containing key-value pairs provided by transform function applied to elements of the given slice.
@@ -220,15 +157,9 @@ func SliceToMap[K comparable, V, T any, F interface {
 	res := make(map[K]V, len(slice))
 	switch f := any(f).(type) {
 	case func(T) (K, V):
-		for _, t := range slice {
-			k, v := f(t)
-			res[k] = v
-		}
+		zun.SliceToMap(res, f, slice...)
 	case func(T, int) (K, V):
-		for i, t := range slice {
-			k, v := f(t, i)
-			res[k] = v
-		}
+		zun.SliceToMapI(res, f, slice...)
 	default:
 		panic("unreachable")
 	}

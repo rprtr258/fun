@@ -4,14 +4,16 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
+
+	"github.com/rprtr258/fun/exp/zun"
 )
 
 // FromMap makes slice of key/value pairs from map.
 func FromMap[A comparable, B any](kv map[A]B) []Pair[A, B] {
 	kvs := make([]Pair[A, B], 0, len(kv))
-	for k, v := range kv {
-		kvs = append(kvs, Pair[A, B]{k, v})
-	}
+	zun.MapToSlice(kvs, kv, func(k A, v B) Pair[A, B] {
+		return Pair[A, B]{k, v}
+	})
 	return kvs
 }
 
@@ -24,20 +26,12 @@ func Copy[T any](slice ...T) []T {
 
 // ReverseInplace reverses slice in place.
 func ReverseInplace[A any](xs []A) {
-	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 {
-		xs[i], xs[j] = xs[j], xs[i]
-	}
+	zun.Reverse(xs)
 }
 
 // Subslice returns slice from start to end without panicking on out of bounds
 func Subslice[T any](start, end int, slice ...T) []T {
-	if start >= end {
-		return nil
-	}
-
-	start = Max(start, 0)
-	end = Min(end, len(slice))
-	return slice[start:end]
+	return zun.Subslice(start, end, slice...)
 }
 
 // Chunk divides slice into chunks of size chunkSize
@@ -64,22 +58,18 @@ func ConcatMap[T, R any](f func(T) []R, slice ...T) []R {
 
 // All returns true if all elements satisfy the condition
 func All[T any](condition func(T) bool, slice ...T) bool {
-	for _, elem := range slice {
-		if !condition(elem) {
-			return false
-		}
-	}
-	return true
+	_, _, ok := zun.Index(func(elem T) bool {
+		return !condition(elem)
+	}, slice...)
+	return !ok
 }
 
 // Any returns true if any element satisfies the condition
 func Any[T any](condition func(T) bool, slice ...T) bool {
-	for _, elem := range slice {
-		if condition(elem) {
-			return true
-		}
-	}
-	return false
+	_, _, ok := zun.Index(func(elem T) bool {
+		return condition(elem)
+	}, slice...)
+	return ok
 }
 
 // SortBy sorts slice in place by given function
