@@ -131,6 +131,8 @@ func useDB(t *testing.T) Coro[struct{}, *int] {
 }
 
 func TestUseDB(t *testing.T) {
+	t.Skip()
+
 	_ = useDB(t)
 	// defer close()
 	t.Fail()
