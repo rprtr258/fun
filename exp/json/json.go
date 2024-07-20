@@ -1,3 +1,6 @@
+// See for inspiration
+// https://package.elm-lang.org/packages/elm/json/latest/Json-Decode
+// https://package.elm-lang.org/packages/NoRedInk/elm-json-decode-pipeline/latest/Json-Decode-Pipeline
 package json
 
 import (
@@ -16,6 +19,53 @@ func decoder[T any](b []byte) (T, error) {
 var Int Decoder[int] = decoder[int]
 var String Decoder[string] = decoder[string]
 var Bool Decoder[bool] = decoder[bool]
+var Float Decoder[float64] = decoder[float64]
+
+type Maybe[T any] struct {
+	Value T
+	Valid bool
+}
+
+func nullable[T any](decoder Decoder[T]) Decoder[Maybe[T]] {
+	return func(b []byte) (Maybe[T], error) {
+		if string(b) == "null" {
+			return Maybe[T]{}, nil
+		}
+
+		value, err := decoder(b)
+		if err != nil {
+			return Maybe[T]{}, nil
+		}
+
+		return Maybe[T]{value, true}, nil
+	}
+}
+
+func dict[T any](decoder Decoder[T]) Decoder[map[string]T] {
+	return func(b []byte) (map[string]T, error) {
+		var m map[string]any
+		if err := json.Unmarshal(b, &m); err != nil {
+			return nil, err
+		}
+
+		res := make(map[string]T, len(m))
+		for k, v := range m {
+			// vahui
+			bb, err := json.Marshal(v)
+			if err != nil {
+				return nil, err
+			}
+
+			vv, err := decoder(bb)
+			if err != nil {
+				return nil, err
+			}
+
+			res[k] = vv
+		}
+		return res, nil
+	}
+}
 
 func List[T any](decoder Decoder[T]) Decoder[[]T] {
 	return func(b []byte) ([]T, error) {
@@ -40,24 +90,33 @@ func List[T any](decoder Decoder[T]) Decoder[[]T] {
 	}
 }
 
+// TODO: expressible as required
 func Field[T any](name string, decoder Decoder[T]) Decoder[T] {
+	return required(name, decoder, succeed(func(t T) T { return t }))
+}
+
+func oneOf[T any](decoders []Decoder[T]) Decoder[T] {
 	return func(b []byte) (T, error) {
-		var x map[string]any
-		if err := json.Unmarshal(b, &x); err != nil {
-			return *new(T), err
+		errors := make([]error, 0, len(decoders))
+		for _, decoder := range decoders {
+			if res, err := decoder(b); err == nil {
+				return res, nil
+			} else {
+				errors = append(errors, err)
+			}
 		}
+		return *new(T), fmt.Errorf("all variants failed: %v", errors)
+	}
+}
 
-		value, ok := x[name]
-		if !ok {
-			return *new(T), fmt.Errorf("field %q not found", name)
-		}
-
-		// TODO: vahui
-		bb, err := json.Marshal(value)
+func Map[T, R any](decoder Decoder[T], f func(T) R) Decoder[R] {
+	return func(b []byte) (R, error) {
+		value, err := decoder(b)
 		if err != nil {
-			return *new(T), err
+			return *new(R), nil
 		}
-		return decoder(bb)
+
+		return f(value), nil
 	}
 }
 
@@ -104,9 +163,55 @@ func map3[A, B, C, T any](
 	}
 }
 
+func andThen[A, B any](da Decoder[A], f func(A) Decoder[B]) Decoder[B] {
+	return func(b []byte) (B, error) {
+		a, err := da(b)
+		if err != nil {
+			return *new(B), err
+		}
+		return f(a)(b)
+	}
+}
+
+func exampleAndThen() {
+	type Info struct{}
+
+	var infoDecoderV4 Decoder[Info]
+	var infoDecoderV3 Decoder[Info]
+
+	infoHelp := func(version int) Decoder[Info] {
+		switch version {
+		case 3:
+			return infoDecoderV3
+		case 4:
+			return infoDecoderV4
+		default:
+			return fail[Info](fmt.Sprintf("Trying to decode info, but version %d is not supported.", version))
+		}
+	}
+
+	info := andThen(Field("version", Int), infoHelp)
+	_ = info
+}
+
 func succeed[T any](x T) Decoder[T] {
 	return func([]byte) (T, error) {
 		return x, nil
+	}
+}
+
+func null[T any](value T) Decoder[T] {
+	return func(b []byte) (T, error) {
+		if string(b) == "null" {
+			return value, nil
+		}
+		return *new(T), fmt.Errorf("not null")
+	}
+}
+
+func fail[T any](msg string) Decoder[T] {
+	return func([]byte) (T, error) {
+		return *new(T), fmt.Errorf("%s", msg)
 	}
 }
 
@@ -125,38 +230,33 @@ func required[A, B any](name string, da Decoder[A], df Decoder[func(A) B]) Decod
 	}
 }
 
-func requiredAt[A, B any](names []string, da Decoder[A], df Decoder[func(A) B]) Decoder[B] {
-	if len(names) == 0 {
-		panic("names must not be empty")
+func at[T any](names []string, decoder Decoder[T]) Decoder[T] {
+	res := decoder
+	for i := len(names) - 1; i >= 0; i-- {
+		res = Field(names[i], res)
 	}
-	if len(names) == 1 {
-		return required(names[0], da, df)
-	}
-	return func(b []byte) (B, error) {
-		var m map[string]any
-		if err := json.Unmarshal(b, &m); err != nil {
-			return *new(B), err
+	return res
+}
+
+func index[T any](i int, decoder Decoder[T]) Decoder[T] {
+	return func(b []byte) (T, error) {
+		var x []any
+		if err := json.Unmarshal(b, &x); err != nil {
+			return *new(T), err
 		}
 
-		v := m[names[0]]
-		for _, name := range names[1:] {
-			v = v.(map[string]any)[name]
+		if len(x) <= i {
+			return *new(T), fmt.Errorf("no such index %d", i)
 		}
 
-		// vahui
-		bb, err := json.Marshal(v)
+		value := x[i]
+		// TODO: vahui
+		bb, err := json.Marshal(value)
 		if err != nil {
-			return *new(B), err
+			return *new(T), err
 		}
-		a, err := da(bb)
-		if err != nil {
-			return *new(B), err
-		}
-		f, err := df(bb)
-		if err != nil {
-			return *new(B), err
-		}
-		return f(a), nil
+
+		return decoder(bb)
 	}
 }
 
@@ -196,6 +296,10 @@ func optional[A, B any](name string, da Decoder[A], fallback A, df Decoder[func(
 		}
 		return f(a), nil
 	}
+}
+
+func DecodeString[T any](s string, decoder Decoder[T]) (T, error) {
+	return decoder([]byte(s))
 }
 
 func example2() {
