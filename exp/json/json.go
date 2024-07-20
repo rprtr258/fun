@@ -1,4 +1,4 @@
-package main
+package json
 
 import (
 	"encoding/json"
@@ -160,7 +160,45 @@ func requiredAt[A, B any](names []string, da Decoder[A], df Decoder[func(A) B]) 
 	}
 }
 
-func main() {
+func optional[A, B any](name string, da Decoder[A], fallback A, df Decoder[func(A) B]) Decoder[B] {
+	return func(b []byte) (B, error) {
+		var x map[string]any
+		if err := json.Unmarshal(b, &x); err != nil {
+			return *new(B), err
+		}
+
+		value, ok := x[name]
+		if !ok {
+			// TODO: vahui
+			bb, err := json.Marshal(fallback)
+			if err != nil {
+				return *new(B), err
+			}
+			var xx any
+			if err := json.Unmarshal(bb, &xx); err != nil {
+				return *new(B), err
+			}
+			value = xx
+		}
+
+		// TODO: vahui
+		bb, err := json.Marshal(value)
+		if err != nil {
+			return *new(B), err
+		}
+		a, err := da(bb)
+		if err != nil {
+			return *new(B), err
+		}
+		f, err := df(bb)
+		if err != nil {
+			return *new(B), err
+		}
+		return f(a), nil
+	}
+}
+
+func example2() {
 	type User struct {
 		ID    int
 		Name  string
