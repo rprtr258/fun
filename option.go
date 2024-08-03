@@ -1,11 +1,22 @@
 package fun
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Option is either value or nothing.
 type Option[T any] struct {
 	Value T
 	Valid bool
+}
+
+func (o Option[T]) String() string {
+	if !o.Valid {
+		return "None"
+	}
+
+	return fmt.Sprintf("Some(%v)", o.Value)
 }
 
 func (o Option[T]) MarshalJSON() ([]byte, error) {
