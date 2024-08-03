@@ -27,9 +27,9 @@ func Filter[T any, F interface {
 	res := make([]T, 0, len(slice))
 	switch f := any(f).(type) {
 	case func(T) bool:
-		zun.Filter(res, f, slice...)
+		zun.Filter(&res, f, slice...)
 	case func(T, int) bool:
-		zun.FilterI(res, f, slice...)
+		zun.FilterI(&res, f, slice...)
 	default:
 		panic("unreachable")
 	}
@@ -43,15 +43,15 @@ func FilterMap[R, T any, F interface {
 	res := make([]R, 0, len(slice))
 	switch f := any(f).(type) {
 	case func(T) (R, bool):
-		zun.FilterMap(res, f, slice...)
+		zun.FilterMap(&res, f, slice...)
 	case func(T, int) (R, bool):
-		zun.FilterMapI(res, f, slice...)
+		zun.FilterMapI(&res, f, slice...)
 	case func(T) Option[R]:
-		zun.FilterMap(res, func(x T) (R, bool) {
+		zun.FilterMap(&res, func(x T) (R, bool) {
 			return f(x).Unpack()
 		}, slice...)
 	case func(T, int) Option[R]:
-		zun.FilterMapI(res, func(x T, i int) (R, bool) {
+		zun.FilterMapI(&res, func(x T, i int) (R, bool) {
 			return f(x, i).Unpack()
 		}, slice...)
 	default:
@@ -96,25 +96,25 @@ func Deref[T any](ptr *T) T {
 
 func MapToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) R) []R {
 	res := make([]R, 0, len(dict))
-	zun.MapToSlice(res, dict, f)
+	zun.MapToSlice(&res, dict, f)
 	return res
 }
 
 func MapFilterToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) (R, bool)) []R {
 	res := make([]R, 0, len(dict))
-	zun.MapFilterToSlice(res, dict, f)
+	zun.MapFilterToSlice(&res, dict, f)
 	return res
 }
 
 func Keys[K comparable, V any](dict map[K]V) []K {
 	res := make([]K, 0, len(dict))
-	zun.Keys(res, dict)
+	zun.Keys(&res, dict)
 	return res
 }
 
 func Values[K comparable, V any](dict map[K]V) []V {
 	res := make([]V, 0, len(dict))
-	zun.Values(res, dict)
+	zun.Values(&res, dict)
 	return res
 }
 

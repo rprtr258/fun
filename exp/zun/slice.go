@@ -23,63 +23,55 @@ func MapI[R, T any](
 }
 
 // len(res) == 0 && cap(res) >= len(slice)
-// returns number of elements
 func Filter[T any](
-	res []T,
+	res *[]T,
 	f func(T) bool,
 	slice ...T,
-) int {
+) {
 	for _, x := range slice {
 		if f(x) {
-			res = append(res, x)
+			*res = append(*res, x)
 		}
 	}
-	return len(res)
 }
 
 // len(res) == 0 && cap(res) >= len(slice)
-// returns number of elements
 func FilterI[T any](
-	res []T,
+	res *[]T,
 	f func(T, int) bool,
 	slice ...T,
-) int {
+) {
 	for i, x := range slice {
 		if f(x, i) {
-			res = append(res, x)
+			*res = append(*res, x)
 		}
 	}
-	return len(res)
 }
 
 // len(res) == 0 && cap(res) >= len(slice)
-// returns number of elements
 func FilterMap[R, T any](
-	res []R,
+	res *[]R,
 	f func(T) (R, bool),
 	slice ...T,
-) int {
+) {
 	for _, x := range slice {
 		if y, ok := f(x); ok {
-			res = append(res, y)
+			*res = append(*res, y)
 		}
 	}
-	return len(res)
 }
 
 // len(res) == 0 && cap(res) >= len(slice)
-// returns number of elements
 func FilterMapI[R, T any](
-	res []R,
+	res *[]R,
 	f func(T, int) (R, bool),
 	slice ...T,
-) int {
+) {
 	for i, x := range slice {
 		if y, ok := f(x, i); ok {
-			res = append(res, y)
+			*res = append(*res, y)
 		}
 	}
-	return len(res)
 }
 
 // len(res) >= len(slice)
@@ -120,49 +112,47 @@ func MapErrI[R, T any](
 
 // len(res) == 0 && cap(res) >= len(dict)
 func MapToSlice[K comparable, V, R any](
-	res []R,
+	res *[]R,
 	dict map[K]V,
 	f func(K, V) R,
 ) {
 	for k, v := range dict {
-		res = append(res, f(k, v))
+		*res = append(*res, f(k, v))
 	}
 }
 
 // len(res) == 0 && cap(res) >= len(dict)
-// returns number of elements
 func MapFilterToSlice[K comparable, V, R any](
-	res []R,
+	res *[]R,
 	dict map[K]V,
 	f func(K, V) (R, bool),
-) int {
+) {
 	for k, v := range dict {
 		y, ok := f(k, v)
 		if !ok {
 			continue
 		}
-		res = append(res, y)
+		*res = append(*res, y)
 	}
-	return len(res)
 }
 
 // len(res) == 0 && cap(res) >= len(dict)
 func Keys[K comparable, V any](
-	res []K,
+	res *[]K,
 	dict map[K]V,
 ) {
 	for k := range dict {
-		res = append(res, k)
+		*res = append(*res, k)
 	}
 }
 
 // len(res) == 0 && cap(res) >= len(dict)
 func Values[K comparable, V any](
-	res []V,
+	res *[]V,
 	dict map[K]V,
 ) {
 	for _, v := range dict {
-		res = append(res, v)
+		*res = append(*res, v)
 	}
 }
 
