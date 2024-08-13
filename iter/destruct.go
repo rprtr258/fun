@@ -15,16 +15,6 @@ func ForEach[V any](seq Seq[V], f func(V)) {
 	})
 }
 
-// ToSlice executes the seq and collects all results to a slice.
-func ToSlice[A any](seq Seq[A]) []A {
-	slice := make([]A, 0)
-	seq(func(a A) bool {
-		slice = append(slice, a)
-		return true
-	})
-	return slice
-}
-
 // ToSet executes the seq and collects all results to a set.
 func ToSet[A comparable](seq Seq[A]) set.Set[A] {
 	set := set.New[A](0)

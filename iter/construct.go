@@ -4,8 +4,7 @@ package iter
 
 import (
 	"cmp"
-
-	"github.com/rprtr258/fun"
+	"iter"
 )
 
 func FromInt(n int) Seq[int] {
@@ -18,46 +17,26 @@ func FromInt(n int) Seq[int] {
 	}
 }
 
-func FromPullFunc[T any](sf func() (T, error)) Seq[fun.Result[T]] {
-	return func(yield func(r fun.Result[T]) bool) {
+func FromPullFunc[T any](sf func() (T, error)) iter.Seq2[T, error] {
+	return func(yield func(T, error) bool) {
 		for {
 			x, err := sf()
 			if err != nil {
-				yield(fun.Result[T]{x, err})
+				yield(x, err)
 				return
 			}
 
-			if !yield(fun.Result[T]{x, nil}) {
-				return
-			}
-		}
-	}
-}
-
-func FromSlice[T any](s []T) Seq[fun.Pair[int, T]] {
-	return func(yield func(fun.Pair[int, T]) bool) {
-		for i, x := range s {
-			if !yield(fun.Pair[int, T]{i, x}) {
+			if !yield(x, nil) {
 				return
 			}
 		}
 	}
 }
 
-func FromString(s string) Seq[fun.Pair[int, rune]] {
-	return func(yield func(fun.Pair[int, rune]) bool) {
+func FromString(s string) iter.Seq2[int, rune] {
+	return func(yield func(int, rune) bool) {
 		for i, r := range s {
-			if !yield(fun.Pair[int, rune]{i, r}) {
-				return
-			}
-		}
-	}
-}
-
-func FromDict[K comparable, V any](d map[K]V) Seq[fun.Pair[K, V]] {
-	return func(yield func(fun.Pair[K, V]) bool) {
-		for k, v := range d {
-			if !yield(fun.Pair[K, V]{k, v}) {
+			if !yield(i, r) {
 				return
 			}
 		}

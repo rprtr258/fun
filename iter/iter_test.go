@@ -10,7 +10,7 @@ import (
 
 func assertStream[T any](t *testing.T, s iter.Seq[T], expected []T) {
 	t.Helper()
-	assert.Equal(t, expected, iter.ToSlice(s))
+	assert.Equal(t, expected, s.Slice())
 }
 
 var (
@@ -151,35 +151,35 @@ func TestGroupByMapCount(t *testing.T) {
 }
 
 func TestChain(t *testing.T) {
-	got := iter.ToSlice(iter.Concat(
+	got := iter.Concat(
 		iter.FromMany(1, 2),
 		iter.FromMany(3, 4, 5),
 		iter.FromMany(6),
-	))
+	).Slice()
 	assert.Equal(t, []int{1, 2, 3, 4, 5, 6}, got)
 }
 
 func TestFlatten(t *testing.T) {
-	got := iter.ToSlice(iter.Flatten(iter.FromMany([]iter.Seq[int]{
+	got := iter.Flatten(iter.FromMany([]iter.Seq[int]{
 		iter.FromMany(1, 2),
 		iter.FromMany(3, 4, 5),
 		iter.FromMany(6),
-	}...)))
+	}...)).Slice()
 	assert.Equal(t, []int{1, 2, 3, 4, 5, 6}, got)
 }
 
 func TestIntersperse(t *testing.T) {
-	got := iter.ToSlice(iter.Intersperse(iter.FromMany(1, 2, 3, 4, 5), 0))
+	got := iter.Intersperse(iter.FromMany(1, 2, 3, 4, 5), 0).Slice()
 	assert.Equal(t, []int{1, 0, 2, 0, 3, 0, 4, 0, 5}, got)
 }
 
 func TestIntersperseEmpty(t *testing.T) {
-	got := iter.ToSlice(iter.Intersperse(iter.FromNothing[int](), 0))
+	got := iter.Intersperse(iter.FromNothing[int](), 0).Slice()
 	assert.Equal(t, []int{}, got)
 }
 
 func TestIntersperseTwoElems(t *testing.T) {
-	got := iter.ToSlice(iter.Intersperse(iter.FromMany(1, 2), 0))
+	got := iter.Intersperse(iter.FromMany(1, 2), 0).Slice()
 	assert.Equal(t, []int{1, 0, 2}, got)
 }
 
@@ -188,7 +188,7 @@ func TestSkip(t *testing.T) {
 }
 
 func TestSkipToEmpty(t *testing.T) {
-	got := iter.ToSlice(iter.Skip(iter.FromMany(1, 2, 3), 100))
+	got := iter.Skip(iter.FromMany(1, 2, 3), 100).Slice()
 	assert.Equal(t, []int{}, got)
 }
 
@@ -223,7 +223,7 @@ func TestFilterMap(t *testing.T) {
 		MapFilter(func(x int) (int, bool) {
 			return x / 2, x%2 == 0
 		}).
-		ToSlice()
+		Slice()
 	assert.Equal(t, []int{1, 2, 3, 4}, got)
 }
 
@@ -255,6 +255,6 @@ func TestCount_lenToSlice(t *testing.T) {
 		arr := [100]struct{}{}
 		seq1 := iter.FromMany(arr[:i]...)
 		seq2 := iter.FromMany(arr[:i]...)
-		assert.Equal(t, iter.Count(seq1), len(seq2.ToSlice()))
+		assert.Equal(t, iter.Count(seq1), len(seq2.Slice()))
 	}
 }

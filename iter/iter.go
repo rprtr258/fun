@@ -4,12 +4,14 @@ package iter
 import (
 	"cmp"
 	"fmt"
+	"iter"
+	"slices"
 
 	"github.com/rprtr258/fun"
 	"github.com/rprtr258/fun/set"
 )
 
-type Seq[V any] func(yield func(V) bool)
+type Seq[V any] iter.Seq[V]
 
 func (seq Seq[V]) Filter(p func(V) bool) Seq[V] {
 	return Filter(seq, p)
@@ -47,8 +49,8 @@ func (seq Seq[V]) All(p func(V) bool) bool {
 	return All(seq, p)
 }
 
-func (seq Seq[V]) ToSlice() []V {
-	return ToSlice(seq)
+func (seq Seq[V]) Slice() []V {
+	return slices.Collect(iter.Seq[V](seq))
 }
 
 func (seq Seq[V]) Count() int {
@@ -64,6 +66,32 @@ func Map[I, O any](seq Seq[I], f func(I) O) Seq[O] {
 	return func(yield func(O) bool) {
 		seq(func(a I) bool {
 			return yield(f(a))
+		})
+	}
+}
+
+func MapTo2[T, K, V any](seq Seq[T], f func(T) (K, V)) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		seq(func(a T) bool {
+			return yield(f(a))
+		})
+	}
+}
+
+func MapFrom2[T, K, V any](seq iter.Seq2[K, V], f func(K, V) T) Seq[T] {
+	return func(yield func(T) bool) {
+		for k, v := range seq {
+			if !yield(f(k, v)) {
+				break
+			}
+		}
+	}
+}
+
+func Map2[A, B, K, V any](seq iter.Seq2[A, B], f func(A, B) (K, V)) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		seq(func(a A, b B) bool {
+			return yield(f(a, b))
 		})
 	}
 }
@@ -206,15 +234,15 @@ func Intersperse[A any](xs Seq[A], sep A) Seq[A] {
 	}
 }
 
-func Keys[K, V any](xs Seq[fun.Pair[K, V]]) Seq[K] {
-	return Map(xs, func(p fun.Pair[K, V]) K {
-		return p.K
+func Keys[K, V any](xs iter.Seq2[K, V]) Seq[K] {
+	return MapFrom2(xs, func(k K, _ V) K {
+		return k
 	})
 }
 
-func Values[K, V any](xs Seq[fun.Pair[K, V]]) Seq[V] {
-	return Map(xs, func(p fun.Pair[K, V]) V {
-		return p.V
+func Values[K, V any](xs iter.Seq2[K, V]) Seq[V] {
+	return MapFrom2(xs, func(_ K, v V) V {
+		return v
 	})
 }
 
