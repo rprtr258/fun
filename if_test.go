@@ -3,7 +3,7 @@ package fun
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/rprtr258/assert"
 )
 
 func _const[T any](value T) func() T {

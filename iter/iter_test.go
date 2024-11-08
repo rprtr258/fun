@@ -1,9 +1,10 @@
 package iter_test
 
 import (
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/rprtr258/assert"
 
 	"github.com/rprtr258/fun/iter"
 )
@@ -87,7 +88,7 @@ func TestChunks(t *testing.T) {
 		case 1:
 			assert.Equal(t, []int{10, 11, 12, 13, 14, 15, 16, 17, 18}, chunk)
 		default:
-			assert.Fail(t, "unexpected chunk")
+			t.Error("unexpected chunk")
 		}
 		i++
 		return true
@@ -170,12 +171,12 @@ func TestFlatten(t *testing.T) {
 
 func TestIntersperse(t *testing.T) {
 	got := iter.Intersperse(iter.FromMany(1, 2, 3, 4, 5), 0).Slice()
-	assert.Equal(t, []int{1, 0, 2, 0, 3, 0, 4, 0, 5}, got)
+	assert.Assert(t, reflect.DeepEqual([]int{1, 0, 2, 0, 3, 0, 4, 0, 5}, got))
 }
 
 func TestIntersperseEmpty(t *testing.T) {
 	got := iter.Intersperse(iter.FromNothing[int](), 0).Slice()
-	assert.Equal(t, []int{}, got)
+	assert.Equal(t, []int(nil), got)
 }
 
 func TestIntersperseTwoElems(t *testing.T) {
@@ -189,7 +190,7 @@ func TestSkip(t *testing.T) {
 
 func TestSkipToEmpty(t *testing.T) {
 	got := iter.Skip(iter.FromMany(1, 2, 3), 100).Slice()
-	assert.Equal(t, []int{}, got)
+	assert.Equal(t, []int(nil), got)
 }
 
 func TestFind(t *testing.T) {

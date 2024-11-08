@@ -7,7 +7,7 @@ package text
 // 	"os"
 // 	"testing"
 
-// 	"github.com/stretchr/testify/assert"
+// 	"github.com/rprtr258/assert"
 
 // 	"github.com/rprtr258/fun"
 // 	s "github.com/rprtr258/fun/iter"

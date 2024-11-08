@@ -5,9 +5,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/rprtr258/assert"
 
-	"github.com/rprtr258/fun"
 	"github.com/rprtr258/fun/orderedmap"
 )
 
@@ -60,10 +59,10 @@ func TestCrossCheck(t *testing.T) {
 		}
 
 		assert.Equal(t, len(reference), tree.Size())
-		tree.Iter()(func(kv fun.Pair[int, int]) bool {
-			assert.Contains(t, reference, kv.K)
+		for kv := range tree.Iter() {
+			_, ok := reference[kv.K]
+			assert.True(t, ok)
 			assert.Equal(t, reference[kv.K], kv.V)
-			return true
-		})
+		}
 	}
 }

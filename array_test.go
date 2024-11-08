@@ -3,8 +3,8 @@ package fun_test
 import (
 	"testing"
 
+	"github.com/rprtr258/assert"
 	"github.com/rprtr258/fun"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestChunk(t *testing.T) {
