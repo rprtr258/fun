@@ -190,7 +190,7 @@ func TestSkip(t *testing.T) {
 
 func TestSkipToEmpty(t *testing.T) {
 	got := iter.Skip(iter.FromMany(1, 2, 3), 100).Slice()
-	assert.Equal(t, []int(nil), got)
+	assert.Assert(t, reflect.DeepEqual([]int(nil), got))
 }
 
 func TestFind(t *testing.T) {
@@ -199,7 +199,7 @@ func TestFind(t *testing.T) {
 		func(x int) bool { return x%4 == 0 },
 	)
 	assert.True(t, ok)
-	assert.Equal(t, 4, got)
+	assert.Assert(t, got == 4)
 }
 
 func TestFindNotFound(t *testing.T) {
