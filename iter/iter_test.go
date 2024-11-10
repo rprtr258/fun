@@ -29,12 +29,10 @@ func TestGenerate(t *testing.T) {
 	powers2 := iter.FromGenerator(1, mul2)
 
 	a, ok := iter.Head(powers2)
-	assert.True(t, ok)
-	assert.Equal(t, 1, a)
+	assert.Assert(t, ok && a == 1)
 
 	b, ok := iter.Head(iter.Skip(powers2, 9))
-	assert.True(t, ok)
-	assert.Equal(t, 512, b)
+	assert.Assert(t, ok && b == 512)
 }
 
 func TestRepeat(t *testing.T) {
@@ -198,8 +196,7 @@ func TestFind(t *testing.T) {
 		iter.FromMany(1, 2, 3, 4, 5),
 		func(x int) bool { return x%4 == 0 },
 	)
-	assert.True(t, ok)
-	assert.Assert(t, got == 4)
+	assert.Assert(t, ok && got == 4)
 }
 
 func TestFindNotFound(t *testing.T) {

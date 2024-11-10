@@ -24,17 +24,14 @@ func TestSimple(t *testing.T) {
 	assert.Equal(t, 6, tree.Size())
 	for i := 0; i < 6; i++ {
 		got, ok := tree.Kth(i)
-		assert.True(t, ok)
-		assert.Equal(t, i, got)
+		assert.Assert(t, ok && got == i)
 	}
 
 	min, ok := tree.Min()
-	assert.True(t, ok)
-	assert.Equal(t, 0, min)
+	assert.Assert(t, ok && min == 0)
 
 	max, ok := tree.Max()
-	assert.True(t, ok)
-	assert.Equal(t, 5, max)
+	assert.Assert(t, ok && max == 5)
 }
 
 func TestCrossCheck(t *testing.T) {
@@ -60,8 +57,7 @@ func TestCrossCheck(t *testing.T) {
 
 		assert.Equal(t, len(reference), tree.Size())
 		for kv := range tree.Iter() {
-			_, ok := reference[kv.K]
-			assert.True(t, ok)
+			assert.MapContainsKey(t, reference, kv.K)
 			assert.Equal(t, reference[kv.K], kv.V)
 		}
 	}
