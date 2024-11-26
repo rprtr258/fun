@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 type Decoder[T any] func([]byte, *T) error
@@ -19,6 +20,7 @@ var Int Decoder[int] = primitiveDecoder[int]
 var String Decoder[string] = primitiveDecoder[string]
 var Bool Decoder[bool] = primitiveDecoder[bool]
 var Float Decoder[float64] = primitiveDecoder[float64]
+var Time Decoder[time.Time] = primitiveDecoder[time.Time]
 
 type Maybe[T any] struct {
 	Value T
