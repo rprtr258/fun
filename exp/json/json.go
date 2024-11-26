@@ -4,6 +4,7 @@
 package json
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -235,8 +236,28 @@ func Fail[T any](msg string) Decoder[T] {
 // Decode a Required field.
 func Required[A, B any](name string, da Decoder[A], df Decoder[func(A) B]) Decoder[B] {
 	return func(b []byte, res *B) error {
+		dec := json.NewDecoder(bytes.NewReader(b))
+		if tok, err := dec.Token(); err != nil {
+			return err
+		} else if tok != json.Delim('{') {
+			return fmt.Errorf("not a dict")
+		}
+		for {
+			if tok, err := dec.Token(); err != nil {
+				return err
+			} else if tok == json.Delim('}') {
+				return fmt.Errorf("key not found")
+			} else if s, ok := tok.(string); ok {
+				if s != name {
+					dec.Token()
+					continue
+				}
+			}
+			break
+		}
+
 		var a A
-		if err := Field(name, da)(b, &a); err != nil {
+		if err := dec.Decode(&a); err != nil {
 			return err
 		}
 		var f func(A) B

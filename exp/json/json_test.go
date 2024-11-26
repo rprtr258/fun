@@ -1,6 +1,11 @@
 package json
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+
+	"github.com/rprtr258/assert"
+)
 
 func exampleAndThen() {
 	type Info struct{}
@@ -23,7 +28,7 @@ func exampleAndThen() {
 	_ = info
 }
 
-func example2() {
+func TestExample2(t *testing.T) {
 	type User struct {
 		ID    int
 		Name  string
@@ -44,10 +49,9 @@ func example2() {
 					Success(newUser))))
 
 	var result User
-	if err := userDecoder([]byte(`{"id": 123, "email": "sam@example.com", "name": "Sam"}`), &result); err != nil {
-		panic(err)
-	}
-	fmt.Println(result)
+	err := userDecoder([]byte(`{"id": 123, "email": "sam@example.com", "name": "Sam"}`), &result)
+	assert.NoError(t, err)
+	assert.Assert(t, result == User{123, "Sam", "sam@example.com"})
 }
 
 func example() {
