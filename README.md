@@ -14,7 +14,7 @@ layout:
 
 # Iterator and functional utilities
 
-![Coverage](https://img.shields.io/badge/Coverage-26.8%25-red)
+![Coverage](https://img.shields.io/badge/Coverage-26.7%25-red)
 
 The design is inspired by [samber/lo](https://github.com/samber/lo) and [iterator proposal](https://github.com/golang/go/issues/61897).
 
