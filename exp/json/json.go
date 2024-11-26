@@ -299,13 +299,12 @@ func Index[T any](i int, decoder Decoder[T]) Decoder[T] {
 	}
 }
 
-func Optional[A, B any](
+func Optional[A any](
 	name string,
 	da Decoder[A],
 	fallback A,
-	df Decoder[func(A) B],
-) Decoder[B] {
-	return func(b []byte, res *B) error {
+) Decoder[A] {
+	return func(b []byte, res *A) error {
 		var x map[string]any
 		if err := json.Unmarshal(b, &x); err != nil {
 			return err
@@ -334,11 +333,7 @@ func Optional[A, B any](
 		if err := da(bb, &a); err != nil {
 			return err
 		}
-		var f func(A) B
-		if err := df(bb, &f); err != nil {
-			return err
-		}
-		*res = f(a)
+		*res = a
 		return nil
 	}
 }
