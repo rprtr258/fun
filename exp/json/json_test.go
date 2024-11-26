@@ -34,43 +34,23 @@ type User struct {
 	Email string
 }
 
-var userDecoder = Required("email", String,
-	Required("name", String,
-		Required("id", Int,
-			Success(func(id int) func(name string) func(email string) User {
-				return func(name string) func(email string) User {
-					return func(email string) User {
-						return User{id, name, email}
-					}
-				}
-			}))))
+var decoderUser = Map3(
+	func(id int, name string, email string) User {
+		return User{id, name, email}
+	},
+	Required("id", Int),
+	Required("name", String),
+	Required("email", String),
+)
 
 func TestUser(t *testing.T) {
-	var result User
-	err := userDecoder([]byte(`{"id": 123, "email": "sam@example.com", "name": "Sam"}`), &result)
-	assert.NoError(t, err)
-	assert.Assert(t, result == User{123, "Sam", "sam@example.com"})
-}
-
-func TestUser2(t *testing.T) {
-	decoder := Map3(
-		func(id int, name string, email string) User {
-			return User{id, name, email}
-		},
-		Field("id", Int),
-		Field("name", String),
-		Field("email", String),
-	)
-
-	var result User
-	err := decoder([]byte(`{"id": 123, "email": "sam@example.com", "name": "Sam"}`), &result)
+	result, err := decoderUser.ParseString(`{"id": 123, "email": "sam@example.com", "name": "Sam"}`)
 	assert.NoError(t, err)
 	assert.Assert(t, result == User{123, "Sam", "sam@example.com"})
 }
 
 func TestUserList(t *testing.T) {
-	var result []User
-	err := List(userDecoder)([]byte(`[{"id": 123, "email": "sam@example.com", "name": "Sam"}]`), &result)
+	result, err := List(decoderUser).ParseString(`[{"id": 123, "email": "sam@example.com", "name": "Sam"}]`)
 	assert.NoError(t, err)
 	assert.Equal(t, result, []User{{123, "Sam", "sam@example.com"}})
 }
