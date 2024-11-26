@@ -200,6 +200,41 @@ func Map4[A, B, C, D, T any](
 	}
 }
 
+func Map5[A, B, C, D, E, T any](
+	combine func(A, B, C, D, E) T,
+	da Decoder[A],
+	db Decoder[B],
+	dc Decoder[C],
+	dd Decoder[D],
+	de Decoder[E],
+) Decoder[T] {
+	return func(b []byte, res *T) error {
+		var destA A
+		if err := da(b, &destA); err != nil {
+			return err
+		}
+		var destB B
+		if err := db(b, &destB); err != nil {
+			return err
+		}
+		var destC C
+		if err := dc(b, &destC); err != nil {
+			return err
+		}
+		var destD D
+		if err := dd(b, &destD); err != nil {
+			return err
+		}
+		var destE E
+		if err := de(b, &destE); err != nil {
+			return err
+		}
+
+		*res = combine(destA, destB, destC, destD, destE)
+		return nil
+	}
+}
+
 func AndThen[A, B any](da Decoder[A], f func(A) Decoder[B]) Decoder[B] {
 	return func(b []byte, res *B) error {
 		var a A
