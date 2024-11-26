@@ -91,10 +91,10 @@ func List[T any](decoder Decoder[T]) Decoder[[]T] {
 
 // TODO: expressible as required
 func Field[T any](name string, decoder Decoder[T]) Decoder[T] {
-	return required(name, decoder, succeed(func(t T) T { return t }))
+	return Required(name, decoder, Success(func(t T) T { return t }))
 }
 
-func oneOf[T any](decoders []Decoder[T]) Decoder[T] {
+func OneOf[T any](decoders []Decoder[T]) Decoder[T] {
 	return func(b []byte, res *T) error {
 		errors := make([]error, 0, len(decoders))
 		for _, decoder := range decoders {
@@ -123,7 +123,7 @@ func Map[T, R any](decoder Decoder[T], f func(T) R) Decoder[R] {
 	}
 }
 
-func map2[A, B, T any](
+func Map2[A, B, T any](
 	combine func(A, B) T,
 	da Decoder[A],
 	db Decoder[B],
@@ -144,7 +144,7 @@ func map2[A, B, T any](
 	}
 }
 
-func map3[A, B, C, T any](
+func Map3[A, B, C, T any](
 	combine func(A, B, C) T,
 	da Decoder[A],
 	db Decoder[B],
@@ -169,7 +169,7 @@ func map3[A, B, C, T any](
 	}
 }
 
-func andThen[A, B any](da Decoder[A], f func(A) Decoder[B]) Decoder[B] {
+func AndThen[A, B any](da Decoder[A], f func(A) Decoder[B]) Decoder[B] {
 	return func(b []byte, res *B) error {
 		var a A
 		if err := da(b, &a); err != nil {
@@ -179,35 +179,14 @@ func andThen[A, B any](da Decoder[A], f func(A) Decoder[B]) Decoder[B] {
 	}
 }
 
-func exampleAndThen() {
-	type Info struct{}
-
-	var infoDecoderV4 Decoder[Info]
-	var infoDecoderV3 Decoder[Info]
-
-	infoHelp := func(version int) Decoder[Info] {
-		switch version {
-		case 3:
-			return infoDecoderV3
-		case 4:
-			return infoDecoderV4
-		default:
-			return fail[Info](fmt.Sprintf("Trying to decode info, but version %d is not supported.", version))
-		}
-	}
-
-	info := andThen(Field("version", Int), infoHelp)
-	_ = info
-}
-
-func succeed[T any](x T) Decoder[T] {
+func Success[T any](x T) Decoder[T] {
 	return func(_ []byte, res *T) error {
 		*res = x
 		return nil
 	}
 }
 
-func null[T any](value T) Decoder[T] {
+func Null[T any](value T) Decoder[T] {
 	return func(b []byte, res *T) error {
 		if string(b) == "null" {
 			*res = value
@@ -217,14 +196,14 @@ func null[T any](value T) Decoder[T] {
 	}
 }
 
-func fail[T any](msg string) Decoder[T] {
+func Fail[T any](msg string) Decoder[T] {
 	return func([]byte, *T) error {
 		return fmt.Errorf("%s", msg)
 	}
 }
 
-// Decode a required field.
-func required[A, B any](name string, da Decoder[A], df Decoder[func(A) B]) Decoder[B] {
+// Decode a Required field.
+func Required[A, B any](name string, da Decoder[A], df Decoder[func(A) B]) Decoder[B] {
 	return func(b []byte, res *B) error {
 		var a A
 		if err := Field(name, da)(b, &a); err != nil {
@@ -239,7 +218,7 @@ func required[A, B any](name string, da Decoder[A], df Decoder[func(A) B]) Decod
 	}
 }
 
-func at[T any](names []string, decoder Decoder[T]) Decoder[T] {
+func At[T any](names []string, decoder Decoder[T]) Decoder[T] {
 	res := decoder
 	for i := len(names) - 1; i >= 0; i-- {
 		res = Field(names[i], res)
@@ -247,7 +226,7 @@ func at[T any](names []string, decoder Decoder[T]) Decoder[T] {
 	return res
 }
 
-func index[T any](i int, decoder Decoder[T]) Decoder[T] {
+func Index[T any](i int, decoder Decoder[T]) Decoder[T] {
 	return func(b []byte, res *T) error {
 		var x []any
 		if err := json.Unmarshal(b, &x); err != nil {
@@ -269,7 +248,12 @@ func index[T any](i int, decoder Decoder[T]) Decoder[T] {
 	}
 }
 
-func optional[A, B any](name string, da Decoder[A], fallback A, df Decoder[func(A) B]) Decoder[B] {
+func Optional[A, B any](
+	name string,
+	da Decoder[A],
+	fallback A,
+	df Decoder[func(A) B],
+) Decoder[B] {
 	return func(b []byte, res *B) error {
 		var x map[string]any
 		if err := json.Unmarshal(b, &x); err != nil {
@@ -312,47 +296,4 @@ func DecodeString[T any](s string, decoder Decoder[T]) (T, error) {
 	var t T
 	err := decoder([]byte(s), &t)
 	return t, err
-}
-
-func example2() {
-	type User struct {
-		ID    int
-		Name  string
-		Email string
-	}
-	newUser := func(id int) func(name string) func(email string) User {
-		return func(name string) func(email string) User {
-			return func(email string) User {
-				return User{id, name, email}
-			}
-		}
-	}
-
-	userDecoder :=
-		required("email", String,
-			required("name", String,
-				required("id", Int,
-					succeed(newUser))))
-
-	var result User
-	if err := userDecoder([]byte(`{"id": 123, "email": "sam@example.com", "name": "Sam"}`), &result); err != nil {
-		panic(err)
-	}
-	fmt.Println(result)
-}
-
-func example() {
-	type Job struct {
-		name      string
-		id        int
-		completed bool
-	}
-
-	var point Decoder[Job] = map3(
-		func(name string, id int, completed bool) Job { return Job{name, id, completed} },
-		Field("name", String),
-		Field("id", Int),
-		Field("completed", Bool),
-	)
-	_ = point
 }
