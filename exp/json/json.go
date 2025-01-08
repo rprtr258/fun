@@ -140,7 +140,10 @@ func OneOf[T any](decoders ...Decoder[T]) Decoder[T] {
 	}
 }
 
-func Map[T, R any](decoder Decoder[T], f func(T) R) Decoder[R] {
+func Map[T, R any](
+	f func(T) R,
+	decoder Decoder[T],
+) Decoder[R] {
 	return func(v any, res *R) error {
 		var t T
 		if err := decoder(v, &t); err != nil {
