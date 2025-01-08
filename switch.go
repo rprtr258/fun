@@ -15,8 +15,7 @@ func Switch[R any, T comparable](predicate T, defVal R) *switchCase[T, R] {
 	}
 }
 
-// SwitchZero is a pure functional switch/case/default statement with default
-// zero value.
+// SwitchZero is a pure functional switch/case/default statement with default zero value.
 func SwitchZero[R any, T comparable](predicate T) *switchCase[T, R] {
 	return Switch(predicate, Zero[R]())
 }

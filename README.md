@@ -1,257 +1,584 @@
----
-layout:
-  title:
-    visible: true
-  description:
-    visible: false
-  tableOfContents:
-    visible: false
-  outline:
-    visible: false
-  pagination:
-    visible: false
----
-
 # Iterator and functional utilities
 
-![Coverage](https://img.shields.io/badge/Coverage-26.7%25-red)
-
-The design is inspired by [samber/lo](https://github.com/samber/lo) and [iterator proposal](https://github.com/golang/go/issues/61897).
+The design is inspired by [samber/lo](https://github.com/samber/lo) and [iterator proposal](https://github.com/golang/go/issues/61897). This library does not deal with channel/pipes/concurrency as that is beyond the scope of this project.
 
 ## Root package
+Root package `github.com/rprtr258/fun` provides common slice and functional utilities.
 
-Root package `github.com/rprtr258/fun` provides common slice and functional utilities:
-
-### slice
-
-| Name        | In                                                                                                                      | Out                                                              | Description                                                           |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `Map`       | <pre class="language-go"><code class="lang-go">[T, R any]
-func(T) R | func(T, int) R
-...T
-</code></pre>                 | <pre class="language-go"><code class="lang-go">[]R
-</code></pre> | Apply function to all elements and get slice with results             |
-| `Filter`    | <pre class="language-go"><code class="lang-go">[T any]
-func(T) bool | func(T, int) bool
-...T
-</code></pre>              | <pre class="language-go"><code class="lang-go">[]T
-</code></pre> | Filter slice elements using given predicate                           |
-| `FilterMap` | <pre class="language-go"><code class="lang-go">[T, R any]
-func(T) (R, bool) | func(T, int) (R, bool)
-...T
-</code></pre> | <pre class="language-go"><code class="lang-go">[]R
-</code></pre> | Transform each element, leaving only those for which true is returned |
-
-```go
-func MapDict[T comparable, R any](collection []T, dict map[T]R) []R
-
-func MapErr[R, T any, E interface {
-	error
-	comparable
-}, FE interface {
-	func(T) (R, E) | func(T, int) (R, E)
-}](f FE, slice ...T) ([]R, E)
-
-func Deref[T any](ptr *T) T
-
-func MapToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) R) []R
-
-func MapFilterToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) (R, bool)) []R
-
-func Keys[K comparable, V any](dict map[K]V) []K
-
-func Values[K comparable, V any](dict map[K]V) []V
-
-// FindKeyBy returns the key of the first element predicate returns truthy for.
-func FindKeyBy[K comparable, V any](dict map[K]V, predicate func(K, V) bool) (K, bool)
-
-// Uniq returns unique values of slice.
-func Uniq[T comparable](collection ...T) []T
-
-// Index returns first found element by predicate along with it's index
-func Index[T comparable](find func(T) bool, slice ...T) (T, int, bool)
-
-// Contains returns true if an element is present in a collection.
-func Contains[T comparable](needle T, slice ...T) bool
-
-// SliceToMap returns a map containing key-value pairs provided by transform function applied to elements of the given slice.
-// If any of two pairs would have the same key the last one gets added to the map.
-// The order of keys in returned map is not specified and is not guaranteed to be the same from the original array.
-func SliceToMap[K comparable, V, T any, F interface {
-	func(T) (K, V) | func(T, int) (K, V)
-}](f F, slice ...T) map[K]V
-
-// FromMap makes slice of key/value pairs from map.
-func FromMap[A comparable, B any](kv map[A]B) []Pair[A, B]
-
-// Copy slice
-func Copy[T any](slice []T) []T
-
-// ReverseInplace reverses slice in place.
-func ReverseInplace[A any](xs []A)
-
-// Subslice returns slice from start to end without panicking on out of bounds
-func Subslice[T any](start, end int, slice ...T) []T
-
-// Chunk divides slice into chunks of size chunkSize
-func Chunk[T any](chunkSize int, slice ...T) [][]T
-
-// ConcatMap is like Map but concatenates results
-func ConcatMap[T, R any](f func(T) []R, slice ...T) []R
-
-// All returns true if all elements satisfy the condition
-func All[T any](condition func(T) bool, slice ...T) bool
-
-// Any returns true if any element satisfies the condition
-func Any[T any](condition func(T) bool, slice ...T) bool
-
-// SortBy sorts slice in place by given function
-func SortBy[T any, R cmp.Ordered](by func(T) R, slice ...T)
-
-// GroupBy groups elements by key
-func GroupBy[T any, K comparable](by func(T) K, slice ...T) map[K][]T
-```
-
-### cmp
-
-```go
-// Min returns the minimum of the given values
-func Min[T cmp.Ordered](xs ...T) T
-
-// Max returns the maximum of the given values
-func Max[T cmp.Ordered](xs ...T) T
-
-// Clamp returns x clamped between low and high
-func Clamp[T cmp.Ordered](x, low, high T) T
-
-// MinBy returns the minimum of the given values using the given order function
-func MinBy[T any, R cmp.Ordered](order func(T) R, xs ...T) T
-
-// MaxBy returns the maximum of the given values using the given order function
-func MaxBy[T any, R cmp.Ordered](order func(T) R, xs ...T) T
-```
-
-### optional values
-
-```go
-// Option is either value or nothing.
-type Option[T any] struct {
-	Value T
-	Valid bool
-}
-
-func Invalid[T any]() Option[T] {
-	return Option[T]{}
-}
-
-func Valid[T any](t T) Option[T] {
-	return Option[T]{
-		Value: t,
-		Valid: true,
-	}
-}
-
-func Optional[T any](value T, valid bool) Option[T]
-
-func (o Option[T]) Unpack() (T, bool)
-
-func (o Option[T]) Or(other Option[T]) Option[T]
-
-func (o Option[T]) OrDefault(value T) T
-
-func FromPtr[T any](ptr *T) Option[T]
-
-func (opt Option[T]) Ptr() *T
-
-func OptMap[I, O any](o Option[I], f func(I) O) Option[O]
-
-func OptFlatMap[I, O any](o Option[I], f func(I) Option[O]) Option[O]
-```
-
-### fp
+### Core types
 
 ```go
 // Pair is a data structure that has two values.
 type Pair[K, V any] struct {K K; V V}
 
-func Zero[T any]() T
+// Option is either value or nothing.
+type Option[T any] struct {Value T; Valid bool}
 
-// ToString converts the value to string.
-func ToString[A any](a A) string {
-
-// DebugP returns function that prints prefix with element and returns it.
-// Useful for debug printing.
-func DebugP[V any](prefix string) func(V) V
-
-// Debug returns function that prints element and returns it.
-// Useful for debug printing.
-func Debug[V any](v V) V
-
-func Has[K comparable, V any](dict map[K]V, key K) bool
-
-func Cond[R any](defaultValue R, cases ...func() (R, bool)) R
-
-func Ptr[T any](t T) *T
-
-func Pipe[T any](t T, endos ...func(T) T) T
+// Result is either value or error.
+type Result[T any] Pair[T, error]
 ```
 
-#### functional if
+### Core constraints
+```go
+// RealNumber is a generic number interface that covers all Go real number types.
+type RealNumber interface {
+	int | int8 | int16 | int32 | int64 |
+		uint | uint8 | uint16 | uint32 | uint64 |
+		float32 | float64
+}
+
+// Number is a generic number interface that covers all Go number types.
+type Number interface {
+	RealNumber | complex64 | complex128
+}
+```
+
+### Design decisions
+Declarations like
+```go
+func Map[R, T any, F interface {
+	func(T) R | func(T, int) R
+}](f F, slice ...T) []R
+```
+exists for the reason that we want both `func(elem)` and `func(elem, index)` functions work. With such declaration Go cannot infer type `R`, so we have to specify it explicitly on usage: `fun.Map[string](fn, slice...)`
+
+Another moment is that slice arguments are variadic. That allows user not to construct slice in some cases like `fun.Contains(status, "OK", "Success")` instead of `fun.Contains(status, []string{"OK", "Success"})`.
+
+### slice functions
+#### Map
+Applies function to all elements and returns slice with results.
 
 ```go
-func IF[T any](predicate bool, ifTrue, ifFalse T) T
-
-func If[T any](predicate bool, value T) ifElse[T]
-
-func IfF[T any](predicate bool, value func() T) ifElse[T]
-
-func (i ifElse[T]) ElseIf(predicate bool, value T) ifElse[T]
-
-func (i ifElse[T]) ElseIfF(predicate bool, value func() T) ifElse[T]
-
-func (i ifElse[T]) Else(value T) T
-
-func (i ifElse[T]) ElseF(value func() T) T
-
-func (i ifElse[T]) ElseDeref(value *T) T
+fun.Map(func(x int64, _ int) string {
+	return strconv.FormatInt(x, 10)
+}, 0, 1, 2)
+// []string{"0", "1", "2"}
 ```
 
-#### functional switch
+#### Filter
+Filters slice elements using given predicate.
 
 ```go
-// Switch is a pure functional switch/case/default statement.
-func Switch[R any, T comparable](predicate T, defVal R) *switchCase[T, R]
-
-// SwitchZero is a pure functional switch/case/default statement with default
-// zero value.
-func SwitchZero[R any, T comparable](predicate T) *switchCase[T, R]
-
-func (s *switchCase[T, R]) Case(val T, result R) *switchCase[T, R]
-
-func (s *switchCase[T, R]) End() R
+fun.Filter(func(x int64, _ int) bool {
+	return x%2 == 0
+}, 0, 1, 2)
+// []int64{0, 2}
 ```
 
-## Iterators
-
-`github.com/rprtr258/fun/iter` introduces iterator primitives from which `Seq[T]` is basic:
+#### FilterMap
+Transform each element, leaving only those for which true is returned.
 
 ```go
-type Seq[V any] func(yield func(V) bool) bool
+fun.FilterMap(func(x int64, _ int) (string, bool) {
+	return strconv.FormatInt(x, 10), x%2 == 0
+}, 0, 1, 2)
+// []string{"0", "2"}
 ```
 
-Which is a function which accepts function to `yield` values from iteration. `yield` must return `false` when iteration must stop (analogous to `break`). Iterator function returns `true` if it yielded all values and no `break` happened, or `false` otherwise.
+#### MapDict
+Like `Map` but uses dictionary instead of transform function.
+
+```go
+dict := map[int]string{
+	0: "zero",
+	1: "one",
+	2: "two",
+}
+fun.MapDict(dict, 0, 1, 2)
+// []string{"zero", "one", "two"}
+```
+
+#### MapErr
+Like `Map` but returns first error got from transform.
+
+```go
+fun.MapErr(func(x int64, _ int) (string, error) {
+	if x%2 == 0 {
+		return strconv.FormatInt(x, 10), nil
+	}
+	return "", errors.New("odd")
+}, 0, 1, 2)
+// []string{"0"}, errors.New("odd")
+```
+
+#### MapToSlice
+Transforms map to slice using transform function. Order is not guaranteed.
+
+```go
+dict := map[int]string{
+	0: "zero",
+	1: "one",
+	2: "two",
+}
+fun.MapToSlice(dict, func(k int, v string) string {
+	return fmt.Sprintf("%d: %s", k, v)
+})
+// []string{"0: zero", "1: one", "2: two"}
+```
+
+#### MapFilterToSlice
+Transforms map to slice using transform function and returns only those for which true is returned. Order is not guaranteed.
+
+```go
+dict := map[int]string{
+	0: "zero",
+	1: "one",
+	2: "two",
+}
+fun.MapFilterToSlice(dict, func(k int, v string) (string, bool) {
+	return fmt.Sprintf("%d: %s", k, v), k%2 == 0
+})
+// []string{"0: zero", "2: two"}
+```
+
+#### Keys
+Returns keys of map. Order is not guaranteed.
+
+```go
+dict := map[int]string{
+	0: "zero",
+	1: "one",
+	2: "two",
+}
+fun.Keys(dict)
+// []int{0, 1, 2}
+```
+
+#### Values
+Returns values of map. Order is not guaranteed.
+
+```go
+dict := map[int]string{
+	0: "zero",
+	1: "one",
+	2: "two",
+}
+fun.Values(dict)
+// []string{"zero", "one", "two"}
+```
+
+#### FindKeyBy
+Returns the key of the first element predicate returns truthy for.
+
+```go
+dict := map[int]string{
+	0: "zero",
+	1: "one",
+	2: "two",
+}
+fun.FindKeyBy(dict, func(k int, v string) bool {
+	return v == "zero"
+})
+// 0, true
+```
+
+#### Uniq
+Returns unique values of slice. In other words, removes duplicates.
+
+```go
+fun.Uniq(1, 2, 3, 1, 2)
+// []int{1, 2, 3}
+```
+
+#### Index
+Returns first found element by predicate along with it's index.
+
+```go
+fun.Index(func(s string, _ int) bool {
+	return strings.HasPrefix(s, "o")
+}, "zero", "one", "two")
+// "one", 1, true
+```
+
+#### Contains
+Returns true if an element is present in a collection.
+
+```go
+fun.Contains("zero", "zero", "one", "two")
+// true
+```
+
+#### SliceToMap
+Returns a map containing key-value pairs provided by transform function applied to elements of the given slice.
+
+```go
+fun.SliceToMap(func(x int, _ int) (int, int) {
+	return x, x * 10
+}, 0, 1, 2)
+// map[int]int{0: 0, 1: 10, 2: 20}
+```
+
+#### FromMap
+Returns slice of key/value pairs from map.
+
+```go
+dict := map[int]string{
+	0: "zero",
+	1: "one",
+	2: "two",
+}
+fun.FromMap(dict)
+// []fun.Pair[int, string]{0: "zero", 1: "one", 2: "two"}
+```
+
+#### Copy
+Returns copy of slice.
+
+```go
+fun.Copy(1, 2, 3)
+// []int{1, 2, 3}
+```
+
+#### ReverseInplace
+Reverses slice in place.
+
+```go
+xs := []int{1, 2, 3}
+fun.ReverseInplace(xs)
+// xs becomes []int{3, 2, 1}
+```
+
+#### Subslice
+Returns slice from start to end without panicking on out of bounds.
+
+```go
+xs := []int{1, 2, 3, 4, 5}
+fun.Subslice(1, 4, xs...)
+// []int{2, 3, 4}
+```
+
+#### Chunk
+Divides slice into chunks of size chunkSize.
+
+```go
+xs := []int{1, 2, 3, 4, 5}
+fun.Chunk(2, xs...)
+// [][]int{{1, 2}, {3, 4}, {5}}
+```
+
+#### ConcatMap
+Like `Map` but concatenates results.
+
+```go
+fun.ConcatMap(func(x int) []int {
+	return []int{x, x + 10, x + 100}
+}, 0, 1, 2)
+// []int{0, 10, 100, 1, 11, 101, 2, 12, 102}
+```
+
+#### All
+Returns true if all elements satisfy the condition.
+
+```go
+fun.All(func(x int) bool {
+	return x%2 == 0
+}, 0, 2, 4)
+// true
+```
+
+#### Any
+Returns true if any (at least one) element satisfies the condition.
+
+```go
+fun.Any(func(x int) bool {
+	return x%2 == 0
+}, 0, 1, 2)
+// true
+```
+
+#### SortBy
+Sorts slice in place by given function.
+
+```go
+xs := []int{1, 2, 3, 4, 5}
+fun.SortBy(func(x int) int {
+	return -x
+}, xs)
+// xs becomes []int{5, 4, 3, 2, 1}
+```
+
+#### GroupBy
+Groups elements by key.
+
+```go
+fun.GroupBy(func(x int) int {
+	return x % 2
+}, 0, 1, 2, 3, 4)
+// map[int][]int{0: {0, 2, 4}, 1: {1, 3}}
+```
+
+### cmp
+Utilities utilizing values comparison.
+
+#### Min
+Returns the minimum of the given values.
+
+```go
+fun.Min(1, 2, 3)
+// 1
+```
+
+#### Max
+Returns the maximum of the given values.
+
+```go
+fun.Max(1, 2, 3)
+// 3
+```
+
+#### Clamp(x, low, high)
+Returns x clamped between low and high.
+
+```go
+fun.Clamp(99, 1, 10)
+// 10
+```
+
+#### MinBy
+Returns first minimum of given values using given order function.
+
+```go
+fun.MinBy(func(s string) int {
+	return len(s)
+}, "one", "two", "three")
+// "one"
+```
+
+#### MaxBy
+Returns first maximum of given values using given order function.
+
+```go
+fun.MaxBy(func(s string) int {
+	return len(s)
+}, "one", "two", "three")
+// "three"
+```
+
+### Working with Option type
+
+#### Invalid
+Returns empty Option.
+
+```go
+fun.Invalid[int]()
+// Option[int]{}
+```
+
+#### Valid
+Returns Option with given value.
+
+```go
+fun.Valid(1)
+// Option[int]{Value: 1, Valid: true}
+```
+
+#### Optional
+Returns Option with given value and validity.
+
+```go
+fun.Optional(1, true)
+// Option[int]{Value: 1, Valid: true}
+```
+
+#### FromPtr
+Returns Option with value from pointer.
+
+```go
+x := 1
+fun.FromPtr(&x)
+// Option[int]{Value: 1, Valid: true}
+fun.FromPtr[int](nil)
+// Option[int]{}
+```
+
+#### Option.Unpack
+Returns value and validity.
+
+```go
+fun.Valid(1).Unpack()
+// (1, true)
+```
+
+#### Option.Or
+Returns first valid Option.
+
+```go
+fun.Valid(1).Or(fun.Invalid[int]())
+// Option[int]{Value: 1, Valid: true}
+```
+
+#### Option.OrDefault
+Returns value if Option is valid, otherwise returns default value.
+
+```go
+fun.Valid(1).OrDefault(0)
+// 1
+```
+
+#### Option.Ptr
+Returns pointer to value if Option is valid, otherwise returns nil.
+
+```go
+fun.Valid(1).Ptr()
+// &[]int{1}[0]
+```
+
+#### OptMap
+Returns new Option with transformed value.
+
+```go
+fun.Valid(1).OptMap(func(x int) string {
+	return fmt.Sprintf("%d", x)
+})
+// Option[string]{Value: "1", Valid: true}
+```
+
+#### OptFlatMap
+Returns new Option with transformed optional value.
+
+```go
+fun.Valid(1).OptFlatMap(func(x int) Option[string] {
+	return fun.Valid(fmt.Sprintf("%d", x))
+})
+// Option[string]{Value: "1", Valid: true}
+```
+
+### fp
+
+#### Zero
+Returns zero value of given type.
+
+```go
+fun.Zero[int]()
+// 0
+```
+
+#### Debug
+Prints value and returns it. Useful for debug printing.
+
+```go
+fun.Debug(2+2)*2
+// prints 4
+```
+
+#### Has
+Returns true if map has such key.
+
+```go
+dict := map[int]string{
+	0: "zero",
+	1: "one",
+	2: "two",
+}
+fun.Has(dict, 2)
+// true
+```
+
+#### Cond
+Returns first value for which true is returned.
+
+```go
+fun.Cond(
+	1,
+	func() (int, bool) { return 2, true },
+	func() (int, bool) { return 3, false },
+)
+// 2
+```
+
+#### Ptr
+Returns pointer to value.
+
+```go
+fun.Ptr(1)
+// &[]int{1}[0]
+```
+
+#### Deref
+Returns value from pointer. If pointer is nil returns zero value.
+
+```go
+fun.Deref[int](nil) // 0
+fun.Deref[int](new(int)) // 0
+x := 1
+fun.Deref[int](&x) // 1
+```
+
+#### Pipe
+Returns value after applying endomorphisms. Endomorphism is just function from type to itself.
+
+```go
+fun.Pipe(
+	"hello  ",
+	strings.TrimSpace,
+	strings.NewReplacer("l", "|").Replace,
+	strings.ToUpper,
+)
+// "HE||O"
+```
+
+#### If
+There are multiple variations of `if` statement usable as expression.
+
+#### IF
+Simple ternary function.
+
+```go
+fun.IF(true, 1, 0)
+// 1
+```
+
+#### If, IfF
+Returns value from branch for which predicate is true. `F` suffix can be used to get values not evaluated immediately.
+
+```go
+fun.If(true, 1).Else(0)
+// 1
+fun.If(false, 1).ElseF(func() int { return 0 })
+// 0
+fun.If(false, 1).ElseIf(true, 2).Else(3)
+// 2
+fun.IfF(false, func() int { return 1 }).Else(0)
+// 0
+
+fun.If(true, db.Get(0)).Else(db.Get(1))
+// db.Get(0) result, db.Get called two times
+fun.IfF(true, func() Thing { return db.Get(0) }).ElseF(func() Thing { return db.Get(1) })
+// db.Get(0) result, db.Get called once
+```
+
+### Switch
+`switch` usable as expression.
+
+```go
+fun.Switch("one", -1).
+	Case("zero", 0).
+	Case("one", 1).
+	Case("two", 2).
+	End()
+// 1
+```
+
+## Iter
+
+`github.com/rprtr258/fun/iter` introduces iterator primitives for which `iter.Seq[T]` is basic.
+
+```go
+type Seq[V any] func(yield func(V) bool)
+```
+
+Which is a function which accepts function to `yield` values from iteration. `yield` must return `false` when iteration must stop (analogous to `break`).
 
 Example iterator yielding numbers from 1 to `n`, including `n`:
 
 ```go
 func Range(n int) iter.Seq[int] {
-	return func(yield func(int) bool) bool {
-		for i := 1; i <= n; i++ {
+	return func(yield func(int) bool) {
+		for i := range n {
 			if !yield(i) {
-				return false
+				return
 			}
 		}
-		return true
 	}
 }
 ```
@@ -259,3 +586,7 @@ func Range(n int) iter.Seq[int] {
 ## Set
 
 `github.com/rprtr258/fun/set` introduces `Set[T]` primitive for collections of unique `comparable` values.
+
+## Ordered map
+
+`github.com/rprtr258/fun/orderedmap` introduces `OrderedMap[K, V]` data structure which acts like hashmap but also allows to iterate over keys in sorted order. Internally, binary search tree is used.

@@ -58,6 +58,13 @@ func Ptr[T any](t T) *T {
 	return &t
 }
 
+func Deref[T any](ptr *T) T {
+	if ptr == nil {
+		return Zero[T]()
+	}
+	return *ptr
+}
+
 func Pipe[T any](t T, endos ...func(T) T) T {
 	for _, endo := range endos {
 		t = endo(t)

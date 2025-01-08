@@ -8,15 +8,6 @@ import (
 	"github.com/rprtr258/fun/exp/zun"
 )
 
-// FromMap makes slice of key/value pairs from map.
-func FromMap[A comparable, B any](kv map[A]B) []Pair[A, B] {
-	kvs := make([]Pair[A, B], 0, len(kv))
-	zun.MapToSlice(&kvs, kv, func(k A, v B) Pair[A, B] {
-		return Pair[A, B]{k, v}
-	})
-	return kvs
-}
-
 // Copy slice
 func Copy[T any](slice ...T) []T {
 	res := make([]T, 0, len(slice))

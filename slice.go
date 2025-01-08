@@ -87,13 +87,6 @@ func MapErr[R, T any, F interface {
 	return res, nil
 }
 
-func Deref[T any](ptr *T) T {
-	if ptr == nil {
-		return Zero[T]()
-	}
-	return *ptr
-}
-
 func MapToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) R) []R {
 	res := make([]R, 0, len(dict))
 	zun.MapToSlice(&res, dict, f)
@@ -149,8 +142,6 @@ func Contains[T comparable](needle T, slice ...T) bool {
 // SliceToMap returns a map containing key-value pairs provided by transform function applied to elements of the given slice.
 // If any of two pairs would have the same key the last one gets added to the map.
 // The order of keys in returned map is not specified and is not guaranteed to be the same from the original array.
-// Alias of Associate().
-// Play: https://go.dev/play/p/WHa2CfMO3Lr
 func SliceToMap[K comparable, V, T any, F interface {
 	func(T) (K, V) | func(T, int) (K, V)
 }](f F, slice ...T) map[K]V {
@@ -164,4 +155,13 @@ func SliceToMap[K comparable, V, T any, F interface {
 		panic("unreachable")
 	}
 	return res
+}
+
+// FromMap makes slice of key/value pairs from map.
+func FromMap[A comparable, B any](kv map[A]B) []Pair[A, B] {
+	kvs := make([]Pair[A, B], 0, len(kv))
+	zun.MapToSlice(&kvs, kv, func(k A, v B) Pair[A, B] {
+		return Pair[A, B]{k, v}
+	})
+	return kvs
 }

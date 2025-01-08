@@ -55,6 +55,14 @@ func Optional[T any](value T, valid bool) Option[T] {
 	}
 }
 
+func FromPtr[T any](ptr *T) Option[T] {
+	if ptr == nil {
+		return Invalid[T]()
+	}
+
+	return Valid(*ptr)
+}
+
 func (o Option[T]) Unpack() (T, bool) {
 	return o.Value, o.Valid
 }
@@ -65,14 +73,6 @@ func (o Option[T]) Or(other Option[T]) Option[T] {
 
 func (o Option[T]) OrDefault(value T) T {
 	return IF(o.Valid, o.Value, value)
-}
-
-func FromPtr[T any](ptr *T) Option[T] {
-	if ptr == nil {
-		return Invalid[T]()
-	}
-
-	return Valid(*ptr)
 }
 
 func (opt Option[T]) Ptr() *T {
