@@ -70,3 +70,9 @@ func example() {
 	)
 	_ = point
 }
+
+func TestListNull(t *testing.T) {
+	result, err := List(Any).ParseString(`null`)
+	assert.NoError(t, err)
+	assert.Equal(t, result, []any(nil))
+}

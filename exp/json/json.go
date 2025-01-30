@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/rprtr258/fun"
 )
 
 type Decoder[T any] func(any, *T) error
@@ -60,13 +62,13 @@ var Time Decoder[time.Time] = func(a any, t *time.Time) error {
 	return err
 }
 
-type Maybe[T any] struct {
-	Value T
-	Valid bool
+func Any(v any, dest *any) error {
+	*dest = v
+	return nil
 }
 
-func Nullable[T any](decoder Decoder[T]) Decoder[Maybe[T]] {
-	return func(v any, res *Maybe[T]) error {
+func Nullable[T any](decoder Decoder[T]) Decoder[fun.Option[T]] {
+	return func(v any, res *fun.Option[T]) error {
 		if v == nil {
 			return nil
 		}
@@ -102,18 +104,18 @@ func Dict[T any](decoder Decoder[T]) Decoder[map[string]T] {
 
 func List[T any](decoder Decoder[T]) Decoder[[]T] {
 	return func(v any, res *[]T) error {
-		vl, ok := v.([]any)
-		if !ok {
-			return fmt.Errorf("not a list")
-		}
-
-		*res = make([]T, len(vl))
-		for i, v := range vl {
-			var t T
-			if err := decoder(v, &t); err != nil {
-				return err
+		switch v := v.(type) {
+		case nil: // parse null to nil slice
+			*res = nil
+		case []any:
+			*res = make([]T, len(v))
+			for i, v := range v {
+				if err := decoder(v, &(*res)[i]); err != nil {
+					return err
+				}
 			}
-			(*res)[i] = t
+		default:
+			return fmt.Errorf("not a list")
 		}
 		return nil
 	}
