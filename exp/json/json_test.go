@@ -7,7 +7,7 @@ import (
 	"github.com/rprtr258/assert"
 )
 
-func exampleAndThen() {
+func ExampleAndThen() {
 	type Info struct{}
 
 	var infoDecoderV4 Decoder[Info]
@@ -55,7 +55,7 @@ func TestUserList(t *testing.T) {
 	assert.Equal(t, result, []User{{123, "Sam", "sam@example.com"}})
 }
 
-func example() {
+func Example() {
 	type Job struct {
 		name      string
 		id        int

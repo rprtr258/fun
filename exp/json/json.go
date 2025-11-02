@@ -142,132 +142,6 @@ func OneOf[T any](decoders ...Decoder[T]) Decoder[T] {
 	}
 }
 
-func Map[T, R any](
-	f func(T) R,
-	decoder Decoder[T],
-) Decoder[R] {
-	return func(v any, res *R) error {
-		var t T
-		if err := decoder(v, &t); err != nil {
-			return nil
-		}
-
-		*res = f(t)
-		return nil
-	}
-}
-
-func Map2[A, B, T any](
-	combine func(A, B) T,
-	da Decoder[A],
-	db Decoder[B],
-) Decoder[T] {
-	return func(v any, res *T) error {
-		var aa A
-		if err := da(v, &aa); err != nil {
-			return err
-		}
-
-		var bb B
-		if err := db(v, &bb); err != nil {
-			return err
-		}
-
-		*res = combine(aa, bb)
-		return nil
-	}
-}
-
-func Map3[A, B, C, T any](
-	combine func(A, B, C) T,
-	da Decoder[A],
-	db Decoder[B],
-	dc Decoder[C],
-) Decoder[T] {
-	return func(v any, res *T) error {
-		var aa A
-		if err := da(v, &aa); err != nil {
-			return err
-		}
-		var bb B
-		if err := db(v, &bb); err != nil {
-			return err
-		}
-		var cc C
-		if err := dc(v, &cc); err != nil {
-			return err
-		}
-
-		*res = combine(aa, bb, cc)
-		return nil
-	}
-}
-
-func Map4[A, B, C, D, T any](
-	combine func(A, B, C, D) T,
-	da Decoder[A],
-	db Decoder[B],
-	dc Decoder[C],
-	dd Decoder[D],
-) Decoder[T] {
-	return func(v any, res *T) error {
-		var destA A
-		if err := da(v, &destA); err != nil {
-			return err
-		}
-		var destB B
-		if err := db(v, &destB); err != nil {
-			return err
-		}
-		var destC C
-		if err := dc(v, &destC); err != nil {
-			return err
-		}
-		var destD D
-		if err := dd(v, &destD); err != nil {
-			return err
-		}
-
-		*res = combine(destA, destB, destC, destD)
-		return nil
-	}
-}
-
-func Map5[A, B, C, D, E, T any](
-	combine func(A, B, C, D, E) T,
-	da Decoder[A],
-	db Decoder[B],
-	dc Decoder[C],
-	dd Decoder[D],
-	de Decoder[E],
-) Decoder[T] {
-	return func(v any, res *T) error {
-		var destA A
-		if err := da(v, &destA); err != nil {
-			return err
-		}
-		var destB B
-		if err := db(v, &destB); err != nil {
-			return err
-		}
-		var destC C
-		if err := dc(v, &destC); err != nil {
-			return err
-		}
-		var destD D
-		if err := dd(v, &destD); err != nil {
-			return err
-		}
-		var destE E
-		if err := de(v, &destE); err != nil {
-			return err
-		}
-
-		*res = combine(destA, destB, destC, destD, destE)
-		return nil
-	}
-}
-
 func AndThen[A, B any](da Decoder[A], f func(A) Decoder[B]) Decoder[B] {
 	return func(v any, res *B) error {
 		var a A
@@ -363,5 +237,50 @@ func Optional[A any](
 			return err
 		}
 		return nil
+	}
+}
+
+func Option[A any](
+	name string,
+	da Decoder[A],
+) Decoder[fun.Option[A]] {
+	return func(v any, res *fun.Option[A]) error {
+		x, ok := v.(map[string]any)
+		if !ok {
+			return nil
+		}
+
+		v, ok = x[name]
+		if !ok {
+			return nil
+		}
+
+		if err := da(v, &res.Value); err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func Validate[T any](
+	check func(T) error,
+	d Decoder[T],
+) Decoder[T] {
+	return func(v any, res *T) error {
+		if err := d(v, res); err != nil {
+			return err
+		}
+		return check(*res)
+	}
+}
+
+func Std[T any]() Decoder[T] {
+	return func(v any, res *T) error {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return err
+		}
+
+		return json.Unmarshal(b, res)
 	}
 }
