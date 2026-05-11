@@ -111,6 +111,14 @@ func Values[K comparable, V any](dict map[K]V) []V {
 	return res
 }
 
+func Entries[K comparable, V any](dict map[K]V) []Pair[K, V] {
+	res := make([]Pair[K, V], 0, len(dict))
+	for k, v := range dict {
+		res = append(res, Pair[K, V]{k, v})
+	}
+	return res
+}
+
 // FindKeyBy returns the key of the first element predicate returns truthy for.
 func FindKeyBy[K comparable, V any](dict map[K]V, predicate func(K, V) bool) (K, bool) {
 	return zun.FindKeyBy(dict, predicate)
