@@ -1,6 +1,6 @@
 module github.com/rprtr258/fun
 
-go 1.23.0
+go 1.27.0
 
 require github.com/rprtr258/assert v0.1.2
 
