@@ -3,6 +3,7 @@ package fun_test
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/rprtr258/assert"
@@ -109,16 +110,21 @@ func ExampleOption_Ptr() {
 	// Output: 1
 }
 
-func ExampleOptMap() {
-	fmt.Println(fun.OptMap(fun.Valid(1), func(x int) string {
-		return fmt.Sprintf("%d", x)
-	}))
-	// Output: Some(1)
+func ExampleOption_Map() {
+	v := fun.Valid(67)
+	fmt.Println(v.Map(strconv.Itoa).OrDefault("wtf"))
+	// Output: 67
 }
 
-func ExampleOptFlatMap() {
-	fmt.Println(fun.OptFlatMap(fun.Valid(1), func(x int) fun.Option[string] {
-		return fun.Valid(fmt.Sprintf("%d", x))
-	}))
-	// Output: Some(1)
+func ExampleOption_FlatMap() {
+	fmt.Println(fun.
+		Valid(67).
+		FlatMap(func(i int) fun.Option[string] {
+			if i == 0 {
+				return fun.Invalid[string]()
+			}
+			return fun.Valid(strconv.Itoa(i))
+		}).
+		OrDefault("wtf"))
+	// Output: 67
 }
