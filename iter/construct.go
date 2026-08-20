@@ -9,7 +9,7 @@ import (
 
 func FromInt(n int) Seq[int] {
 	return func(yield func(int) bool) {
-		for i := 0; i < int(n); i++ {
+		for i := range n {
 			if !yield(i) {
 				return
 			}

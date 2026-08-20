@@ -11,18 +11,22 @@ import (
 )
 
 func TestEmpty(t *testing.T) {
+	t.Parallel()
+
 	tree := orderedmap.New[int, int](cmp.Less[int])
 	assert.Equal(t, 0, tree.Size())
 }
 
 func TestSimple(t *testing.T) {
+	t.Parallel()
+
 	tree := orderedmap.New[int, int](cmp.Less[int])
 	for k, v := range map[int]int{0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5} {
 		tree.Put(k, v)
 	}
 
 	assert.Equal(t, 6, tree.Size())
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		got, ok := tree.Kth(i)
 		assert.Assert(t, ok && got == i)
 	}
@@ -35,11 +39,13 @@ func TestSimple(t *testing.T) {
 }
 
 func TestCrossCheck(t *testing.T) {
+	t.Parallel()
+
 	reference := make(map[int]int)
 	tree := orderedmap.New[int, int](cmp.Less[int])
 
 	const nops = 1000
-	for i := 0; i < nops; i++ {
+	for range nops {
 		switch rand.Intn(2) {
 		case 0:
 			key, val := rand.Intn(100), rand.Int()

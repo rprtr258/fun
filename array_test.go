@@ -8,6 +8,8 @@ import (
 )
 
 func TestChunk(t *testing.T) {
+	t.Parallel()
+
 	for name, test := range map[string]struct {
 		slice     []int
 		chunkSize int
@@ -25,6 +27,8 @@ func TestChunk(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			got := fun.Chunk(test.chunkSize, test.slice...)
 			assert.Equal(t, test.want, got)
 		})

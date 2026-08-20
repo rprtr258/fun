@@ -44,12 +44,16 @@ var decoderUser = Map3(
 )
 
 func TestUser(t *testing.T) {
+	t.Parallel()
+
 	result, err := decoderUser.ParseString(`{"id": 123, "email": "sam@example.com", "name": "Sam"}`)
 	assert.NoError(t, err)
 	assert.Assert(t, result == User{123, "Sam", "sam@example.com"})
 }
 
 func TestUserList(t *testing.T) {
+	t.Parallel()
+
 	result, err := List(decoderUser).ParseString(`[{"id": 123, "email": "sam@example.com", "name": "Sam"}]`)
 	assert.NoError(t, err)
 	assert.Equal(t, result, []User{{123, "Sam", "sam@example.com"}})
@@ -72,6 +76,8 @@ func Example() {
 }
 
 func TestListNull(t *testing.T) {
+	t.Parallel()
+
 	result, err := List(Any).ParseString(`null`)
 	assert.NoError(t, err)
 	assert.Equal(t, result, []any(nil))

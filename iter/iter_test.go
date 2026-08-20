@@ -22,10 +22,14 @@ var (
 )
 
 func TestStream(t *testing.T) {
+	t.Parallel()
+
 	assertStream(t, iter.Map(iter.FromMany(10, 11, 12), mul2), []int{20, 22, 24})
 }
 
 func TestGenerate(t *testing.T) {
+	t.Parallel()
+
 	powers2 := iter.FromGenerator(1, mul2)
 
 	a, ok := iter.Head(powers2)
@@ -36,6 +40,8 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestRepeat(t *testing.T) {
+	t.Parallel()
+
 	base := iter.FromMany(0, 1, 2)
 	assertStream(t, iter.Take(iter.Repeat(base), 7), []int{
 		0, 1, 2,
@@ -45,15 +51,21 @@ func TestRepeat(t *testing.T) {
 }
 
 func TestNats10(t *testing.T) {
+	t.Parallel()
+
 	assertStream(t, nats10, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 }
 
 func TestSum(t *testing.T) {
+	t.Parallel()
+
 	sum := iter.Sum(nats10)
 	assert.Equal(t, 45, sum)
 }
 
 func TestFlatMap(t *testing.T) {
+	t.Parallel()
+
 	nats3 := func(yield func(int) bool) {
 		_ = !yield(0) || !yield(1) || !yield(2)
 	}
@@ -69,6 +81,8 @@ func TestFlatMap(t *testing.T) {
 }
 
 func TestFlatMap2(t *testing.T) {
+	t.Parallel()
+
 	floatsNested := iter.FlatMap(nats10, func(i int) iter.Seq[float32] {
 		return iter.FromMany(float32(i), float32(2*i))
 	})
@@ -77,6 +91,8 @@ func TestFlatMap2(t *testing.T) {
 }
 
 func TestChunks(t *testing.T) {
+	t.Parallel()
+
 	// chunks cant be retained which doesnt allow to use assertStream
 	i := 0
 	iter.Chunked(iter.Take(nats, 19), 10)(func(chunk []int) bool {
@@ -94,6 +110,8 @@ func TestChunks(t *testing.T) {
 }
 
 func TestForEach(t *testing.T) {
+	t.Parallel()
+
 	powers2 := iter.FromGenerator(1, mul2)
 	is := []int{}
 	iter.ForEach(iter.Take(powers2, 5), func(i int) {
@@ -103,16 +121,22 @@ func TestForEach(t *testing.T) {
 }
 
 func TestFilter(t *testing.T) {
+	t.Parallel()
+
 	sumEven := iter.Sum(iter.Filter(nats10, isEven))
 	assert.Equal(t, 20, sumEven)
 }
 
 func TestUnique(t *testing.T) {
+	t.Parallel()
+
 	intsSet := iter.Unique(iter.FromMany(0, 0, 1, 1, 1, 1, 2, 0, 1, 2, 2, 1, 0))
 	assert.Equal(t, 3, iter.Count(intsSet))
 }
 
 func TestGroupBy(t *testing.T) {
+	t.Parallel()
+
 	intsDuplicated := iter.FlatMap(nats10, func(i int) iter.Seq[int] {
 		return iter.Map(nats10, func(j int) int { return i + j })
 	})
@@ -124,6 +148,8 @@ func TestGroupBy(t *testing.T) {
 }
 
 func TestGrouped(t *testing.T) {
+	t.Parallel()
+
 	/* chunks by 3, taking first 3 chunks:
 	[0, 1, 2] <-
 	[3, 4, 5] <-
@@ -144,12 +170,16 @@ func TestGrouped(t *testing.T) {
 }
 
 func TestGroupByMapCount(t *testing.T) {
+	t.Parallel()
+
 	counter := iter.ToCounterBy(nats10, isEven)
 	assert.Equal(t, 5, counter[false])
 	assert.Equal(t, 5, counter[true])
 }
 
 func TestChain(t *testing.T) {
+	t.Parallel()
+
 	got := iter.Concat(
 		iter.FromMany(1, 2),
 		iter.FromMany(3, 4, 5),
@@ -159,6 +189,8 @@ func TestChain(t *testing.T) {
 }
 
 func TestFlatten(t *testing.T) {
+	t.Parallel()
+
 	got := iter.Flatten(iter.FromMany([]iter.Seq[int]{
 		iter.FromMany(1, 2),
 		iter.FromMany(3, 4, 5),
@@ -168,30 +200,42 @@ func TestFlatten(t *testing.T) {
 }
 
 func TestIntersperse(t *testing.T) {
+	t.Parallel()
+
 	got := iter.Intersperse(iter.FromMany(1, 2, 3, 4, 5), 0).Slice()
 	assert.Assert(t, reflect.DeepEqual([]int{1, 0, 2, 0, 3, 0, 4, 0, 5}, got))
 }
 
 func TestIntersperseEmpty(t *testing.T) {
+	t.Parallel()
+
 	got := iter.Intersperse(iter.FromNothing[int](), 0).Slice()
 	assert.Equal(t, []int(nil), got)
 }
 
 func TestIntersperseTwoElems(t *testing.T) {
+	t.Parallel()
+
 	got := iter.Intersperse(iter.FromMany(1, 2), 0).Slice()
 	assert.Equal(t, []int{1, 0, 2}, got)
 }
 
 func TestSkip(t *testing.T) {
+	t.Parallel()
+
 	assertStream(t, iter.Skip(iter.FromMany(1, 2, 3), 2), []int{3})
 }
 
 func TestSkipToEmpty(t *testing.T) {
+	t.Parallel()
+
 	got := iter.Skip(iter.FromMany(1, 2, 3), 100).Slice()
 	assert.Assert(t, reflect.DeepEqual([]int(nil), got))
 }
 
 func TestFind(t *testing.T) {
+	t.Parallel()
+
 	got, ok := iter.Find(
 		iter.FromMany(1, 2, 3, 4, 5),
 		func(x int) bool { return x%4 == 0 },
@@ -200,6 +244,8 @@ func TestFind(t *testing.T) {
 }
 
 func TestFindNotFound(t *testing.T) {
+	t.Parallel()
+
 	_, ok := iter.Find(
 		iter.FromMany(1, 2, 3),
 		func(x int) bool { return x%4 == 0 },
@@ -208,6 +254,8 @@ func TestFindNotFound(t *testing.T) {
 }
 
 func TestTakeWhile(t *testing.T) {
+	t.Parallel()
+
 	stream := iter.TakeWhile(
 		iter.FromMany(2, 4, 6, 7, 8),
 		func(x int) bool { return x%2 == 0 },
@@ -216,6 +264,8 @@ func TestTakeWhile(t *testing.T) {
 }
 
 func TestFilterMap(t *testing.T) {
+	t.Parallel()
+
 	got := iter.
 		FromMany(2, 4, 6, 7, 8).
 		MapFilter(func(x int) (int, bool) {
@@ -226,6 +276,8 @@ func TestFilterMap(t *testing.T) {
 }
 
 func TestPaged(t *testing.T) {
+	t.Parallel()
+
 	assertStream(t, iter.Paged(iter.FromMany(
 		[]int{1, 2, 3},
 		[]int{4, 5, 6},
@@ -234,10 +286,14 @@ func TestPaged(t *testing.T) {
 }
 
 func TestRange(t *testing.T) {
+	t.Parallel()
+
 	assertStream(t, iter.FromRange(0, 10, 3), []int{0, 3, 6, 9})
 }
 
 func TestNewStream(t *testing.T) {
+	t.Parallel()
+
 	assertStream(t, iter.FromInfiniteGenerator(func(yield func(int)) {
 		yield(1)
 		yield(2)
@@ -249,7 +305,9 @@ func TestNewStream(t *testing.T) {
 }
 
 func TestCount_lenToSlice(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	t.Parallel()
+
+	for i := range 100 {
 		arr := [100]struct{}{}
 		seq1 := iter.FromMany(arr[:i]...)
 		seq2 := iter.FromMany(arr[:i]...)

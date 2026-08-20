@@ -1,28 +1,29 @@
 package text
 
-// import (
-// 	"bytes"
-// 	"io"
-// 	"io/fs"
-// 	"os"
-// 	"testing"
+import (
+	"bytes"
+	"os"
+	"testing"
 
-// 	"github.com/rprtr258/assert"
+	"github.com/rprtr258/assert"
+	"github.com/rprtr258/fun"
 
-// 	"github.com/rprtr258/fun"
-// 	s "github.com/rprtr258/fun/iter"
-// )
+	s "github.com/rprtr258/fun/iter"
+)
 
-// const exampleText = `
-// Line 2
-// Line 30
-// `
+const exampleText = `
+Line 2
+Line 30
+`
 
-// func openFile(name string) result.Result[*os.File] {
-// 	return result.FromGoResult(os.Open(name))
-// }
+func openFile(name string) fun.Result[*os.File] {
+	f, err := os.Open(name)
+	return fun.Result[*os.File]{f, err}
+}
 
 // func TestTextStream(t *testing.T) {
+// 	t.Parallel()
+
 // 	data := []byte(exampleText)
 // 	r := bytes.NewReader(data)
 // 	lines := ReadLines(r)
@@ -36,6 +37,8 @@ package text
 // }
 
 // func TestTextStream2(t *testing.T) {
+// 	t.Parallel()
+
 // 	chunks := ReadByteChunks(bytes.NewReader([]byte(exampleText)), 3)
 // 	lines := SplitBySeparator(chunks, '\n')
 // 	strings := s.Map(lines, func(x []byte) string { return string(x) })
@@ -49,6 +52,8 @@ package text
 // }
 
 // func TestFile(t *testing.T) {
+//  t.Parallel()
+//
 // 	path := t.TempDir() + "/hello.txt"
 // 	content := "hello"
 // 	assert.NoError(t, os.WriteFile(path, []byte(content), fs.ModePerm))
@@ -67,16 +72,22 @@ package text
 // }
 
 // func TestSplitBySeparator(t *testing.T) {
+// 	t.Parallel()
+
 // 	lines := SplitBySeparator(ReadByteChunks(bytes.NewReader([]byte(exampleText)), defaultChunkSize), '\n')
 // 	assert.Equal(t, [][]byte{{}, []byte("Line 2"), []byte("Line 30"), {}}, s.CollectToSlice(lines))
 // }
 
 // func TestTextStreamWrite2(t *testing.T) {
+// 	t.Parallel()
+
 // 	lines := ReadLines(bytes.NewReader([]byte(exampleText)))
-// 	assert.Equal(t, []string{"", "Line 2", "Line 30", ""}, s.CollectToSlice(lines))
+// 	assert.Equal(t, []string{"", "Line 2", "Line 30", ""}, slices.Collect(iter.Seq[string](lines)))
 // }
 
 // func TestTextStreamWrite(t *testing.T) {
+// 	t.Parallel()
+
 // 	linesStream := ReadLines(bytes.NewReader([]byte(exampleText)))
 // 	lens := s.Map(linesStream, func(s string) int { return len(s) })
 // 	lensAsString := s.Map(lens, fun.ToString[int])
@@ -89,6 +100,8 @@ package text
 // }
 
 // func TestTextStream3(t *testing.T) {
+// 	t.Parallel()
+
 // 	chunks := ReadByteChunks(bytes.NewReader([]byte(`123
 // 456
 // `)), 3)
@@ -99,6 +112,8 @@ package text
 // }
 
 // func TestTextStream4(t *testing.T) {
+// 	t.Parallel()
+
 // 	chunks := ReadByteChunks(bytes.NewReader([]byte(`123
 // 456`)), 3)
 // 	lines := SplitBySeparator(chunks, '\n')
@@ -107,8 +122,10 @@ package text
 // 	assert.Equal(t, []string{"123", "456"}, stringsSlice)
 // }
 
-// func TestWrite(t *testing.T) {
-// 	buf := bytes.NewBuffer(make([]byte, 0, 1000))
-// 	WriteByteChunks(buf, s.FromSlice([][]byte{[]byte("a"), []byte("bc")}))
-// 	assert.Equal(t, "abc", buf.String())
-// }
+func TestWrite(t *testing.T) {
+	t.Parallel()
+
+	buf := bytes.NewBuffer(make([]byte, 0, 1000))
+	WriteByteChunks(buf, s.FromMany([]byte("a"), []byte("bc")))
+	assert.Equal(t, "abc", buf.String())
+}
