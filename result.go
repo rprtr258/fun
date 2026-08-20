@@ -78,12 +78,11 @@ func (r Result[T]) Map[R any](f func(T) R) Result[R] {
 	return Result[R]{f(r.Value), nil}
 }
 
-func (r Result[T]) FlatMap[R any](f func(T) (R, error)) Result[R] {
+func (r Result[T]) FlatMap[R any](f func(T) Result[R]) Result[R] {
 	if r.Err != nil {
 		return Result[R]{*new(R), r.Err}
 	}
-	res, err := f(r.Value)
-	return Result[R]{res, err}
+	return f(r.Value)
 }
 
 func (r Result[T]) ReifyErr(f func(error) error) Result[T] {
