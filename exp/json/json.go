@@ -49,18 +49,21 @@ var Int Decoder[int] = func(v any, i *int) error {
 	*i = int(f)
 	return nil
 }
-var String Decoder[string] = primitiveDecoder[string]
-var Bool Decoder[bool] = primitiveDecoder[bool]
-var Float Decoder[float64] = primitiveDecoder[float64]
-var Time Decoder[time.Time] = func(a any, t *time.Time) error {
-	x, ok := a.(string)
-	if !ok {
-		return fmt.Errorf("not a string")
+
+var (
+	String Decoder[string]    = primitiveDecoder[string]
+	Bool   Decoder[bool]      = primitiveDecoder[bool]
+	Float  Decoder[float64]   = primitiveDecoder[float64]
+	Time   Decoder[time.Time] = func(a any, t *time.Time) error {
+		x, ok := a.(string)
+		if !ok {
+			return fmt.Errorf("not a string")
+		}
+		var err error
+		*t, err = time.Parse(time.RFC3339, x)
+		return err
 	}
-	var err error
-	*t, err = time.Parse(time.RFC3339, x)
-	return err
-}
+)
 
 func Any(v any, dest *any) error {
 	*dest = v
