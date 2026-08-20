@@ -16,18 +16,6 @@ type (
 	Seq2[K, V any] iter.Seq2[K, V]
 )
 
-func (seq Seq[V]) Map(f func(V) V) Seq[V] {
-	return Map(seq, f)
-}
-
-func (seq Seq[V]) MapFilter(f func(V) (V, bool)) Seq[V] {
-	return MapFilter(seq, f)
-}
-
-func (seq Seq[V]) FlatMap(f func(V) Seq[V]) Seq[V] {
-	return FlatMap(seq, f)
-}
-
 func (seq Seq[V]) Slice() []V {
 	return slices.Collect(iter.Seq[V](seq))
 }
@@ -37,7 +25,7 @@ func (seq Seq[V]) Chain(other Seq[V]) Seq[V] {
 }
 
 // Map converts values of the stream.
-func Map[I, O any](seq Seq[I], f func(I) O) Seq[O] {
+func (seq Seq[I]) Map[O any](f func(I) O) Seq[O] {
 	return func(yield func(O) bool) {
 		seq(func(a I) bool {
 			return yield(f(a))
@@ -45,7 +33,7 @@ func Map[I, O any](seq Seq[I], f func(I) O) Seq[O] {
 	}
 }
 
-func MapTo2[T, K, V any](seq Seq[T], f func(T) (K, V)) Seq2[K, V] {
+func (seq Seq[T]) MapTo2[K, V any](f func(T) (K, V)) Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		seq(func(a T) bool {
 			return yield(f(a))
@@ -53,7 +41,7 @@ func MapTo2[T, K, V any](seq Seq[T], f func(T) (K, V)) Seq2[K, V] {
 	}
 }
 
-func MapFrom2[T, K, V any](seq Seq2[K, V], f func(K, V) T) Seq[T] {
+func (seq Seq2[K, V]) MapFrom2[T any](f func(K, V) T) Seq[T] {
 	return func(yield func(T) bool) {
 		for k, v := range seq {
 			if !yield(f(k, v)) {
@@ -63,7 +51,7 @@ func MapFrom2[T, K, V any](seq Seq2[K, V], f func(K, V) T) Seq[T] {
 	}
 }
 
-func Map2[A, B, K, V any](seq Seq2[A, B], f func(A, B) (K, V)) Seq2[K, V] {
+func (seq Seq2[A, B]) Map2[K, V any](f func(A, B) (K, V)) Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		seq(func(a A, b B) bool {
 			return yield(f(a, b))
@@ -132,7 +120,7 @@ func Merge[V cmp.Ordered](x, y Seq[V]) Seq[V] {
 }
 
 // FlatMap maps stream using function and concatenates result streams into one.
-func FlatMap[I, O any](seq Seq[I], f func(I) Seq[O]) Seq[O] {
+func (seq Seq[I]) FlatMap[O any](f func(I) Seq[O]) Seq[O] {
 	return func(yield func(O) bool) {
 		seq(func(in I) bool {
 			cont := true
@@ -203,13 +191,13 @@ func (xs Seq[V]) Intersperse(sep V) Seq[V] {
 }
 
 func (xs Seq2[K, V]) Keys() Seq[K] {
-	return MapFrom2(xs, func(k K, _ V) K {
+	return xs.MapFrom2(func(k K, _ V) K {
 		return k
 	})
 }
 
 func (xs Seq2[K, V]) Values() Seq[V] {
-	return MapFrom2(xs, func(_ K, v V) V {
+	return xs.MapFrom2(func(_ K, v V) V {
 		return v
 	})
 }
@@ -286,12 +274,12 @@ func (xs Seq[V]) TakeWhile(p func(V) bool) Seq[V] {
 
 // DebugSeq prints every processed element, without changing it.
 func (xs Seq[V]) DebugSeq() Seq[V] {
-	return Map(xs, fun.Debug[V])
+	return xs.Map(fun.Debug[V])
 }
 
 // DebugSeqP prints every processed element, without changing it.
 func (xs Seq[V]) DebugSeqP(prefix string) Seq[V] {
-	return Map(xs, fun.DebugP[V](prefix))
+	return xs.Map(fun.DebugP[V](prefix))
 }
 
 // Unique makes stream of unique elements.
@@ -311,7 +299,7 @@ func Unique[V comparable](xs Seq[V]) Seq[V] {
 }
 
 // MapFilter applies function to every element and leaves only elements that are not None.
-func MapFilter[I, O any](seq Seq[I], f func(I) (O, bool)) Seq[O] {
+func (seq Seq[I]) MapFilter[O any](f func(I) (O, bool)) Seq[O] {
 	return func(yield func(O) bool) {
 		seq(func(a I) bool {
 			b, ok := f(a)
@@ -322,7 +310,7 @@ func MapFilter[I, O any](seq Seq[I], f func(I) (O, bool)) Seq[O] {
 
 // Paged makes stream from stream of pages of elements represented as slices.
 func Paged[V any](seq Seq[[]V]) Seq[V] {
-	return FlatMap(seq, func(vs []V) Seq[V] {
+	return seq.FlatMap(func(vs []V) Seq[V] {
 		return FromMany(vs...)
 	})
 }

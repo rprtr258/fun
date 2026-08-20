@@ -1,16 +1,13 @@
 package json
 
-func Map[T0, T any](
-	d0 func(T0) T,
-	decoder Decoder[T0],
-) Decoder[T] {
-	return func(v any, res *T) error {
-		var dest0 T0
+func (decoder Decoder[T]) Map[R any](f func(T) R) Decoder[R] {
+	return func(v any, res *R) error {
+		var dest0 T
 		if err := decoder(v, &dest0); err != nil {
 			return nil
 		}
 
-		*res = d0(dest0)
+		*res = f(dest0)
 		return nil
 	}
 }
