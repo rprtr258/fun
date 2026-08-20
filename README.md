@@ -17,7 +17,7 @@ type Pair[K, V any] struct {K K; V V}
 type Option[T any] struct {Value T; Valid bool}
 
 // Result is either value or error.
-type Result[T any] Pair[T, error]
+type Result[T any] struct {Value T; Err error}
 ```
 
 ### Core constraints

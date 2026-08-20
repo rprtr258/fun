@@ -61,7 +61,7 @@ func ReadLines(reader io.Reader) iter.Seq[string] {
 
 	rows := SplitBySeparator(func(yield func([]byte) bool) {
 		for r, ok := pull(); ok; r, ok = pull() {
-			if r.V != nil || !yield(r.K) {
+			if r.Err != nil || !yield(r.Value) {
 				return
 			}
 		}
