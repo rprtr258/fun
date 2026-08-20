@@ -7,13 +7,17 @@ import (
 	"os"
 )
 
-type Seq[T any] func(bool) (T, bool)
-type Seq2[K, V any] func(bool) (K, V, bool)
+type (
+	Seq[T any]     func(bool) (T, bool)
+	Seq2[K, V any] func(bool) (K, V, bool)
+)
 
 var ErrEnd = errors.New("THE END")
 
-type ESeq[T any] func(bool) (T, error)
-type ESeq2[K, V any] func(bool) (K, V, error)
+type (
+	ESeq[T any]     func(bool) (T, error)
+	ESeq2[K, V any] func(bool) (K, V, error)
+)
 
 func Map[T, R any](f func(T) R, s Seq[T]) Seq[R] {
 	return func(b bool) (R, bool) {
