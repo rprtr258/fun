@@ -7,6 +7,8 @@ import (
 )
 
 func TestCounterPlusEmpty(t *testing.T) {
+	t.Parallel()
+
 	c1 := map[int]int{}
 	c2 := map[int]int{}
 	c2[2] = 1
@@ -15,6 +17,8 @@ func TestCounterPlusEmpty(t *testing.T) {
 }
 
 func TestCounterPlus(t *testing.T) {
+	t.Parallel()
+
 	c1 := map[int]int{1: 1, 2: 2}
 	c2 := map[int]int{2: 1}
 	got := CounterPlus(c1, c2)

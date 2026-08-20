@@ -10,6 +10,8 @@ import (
 )
 
 func TestOptionJSONMarshal(t *testing.T) {
+	t.Parallel()
+
 	for name, test := range map[string]struct {
 		opt  fun.Option[int]
 		want string
@@ -24,6 +26,8 @@ func TestOptionJSONMarshal(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := json.Marshal(test.opt)
 			assert.NoError(t, err)
 			assert.Equal(t, test.want, string(got))
@@ -32,6 +36,8 @@ func TestOptionJSONMarshal(t *testing.T) {
 }
 
 func TestOptionJSONUnmarshal(t *testing.T) {
+	t.Parallel()
+
 	for name, test := range map[string]struct {
 		opt  string
 		want fun.Option[int]
@@ -46,6 +52,8 @@ func TestOptionJSONUnmarshal(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			var opt fun.Option[int]
 			err := json.Unmarshal([]byte(test.opt), &opt)
 			assert.NoError(t, err)

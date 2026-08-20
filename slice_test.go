@@ -7,6 +7,8 @@ import (
 )
 
 func TestMap_noIndex(t *testing.T) {
+	t.Parallel()
+
 	for name, test := range map[string]struct {
 		slice    []int
 		f        func(int) int
@@ -35,6 +37,8 @@ func TestMap_noIndex(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			assert.Equal(t, test.expected, Map[int](test.f, test.slice...))
 		})
 	}

@@ -9,6 +9,8 @@ import (
 )
 
 func TestSet(t *testing.T) {
+	t.Parallel()
+
 	set := set.New[int](0)
 	assert.False(t, set.Contains(1))
 	assert.False(t, set.Contains(2))
@@ -24,6 +26,8 @@ func TestSet(t *testing.T) {
 }
 
 func TestSetIntersect(t *testing.T) {
+	t.Parallel()
+
 	set1 := set.New[int](0)
 	set1.Add(1)
 	set1.Add(2)
