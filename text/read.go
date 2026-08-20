@@ -59,13 +59,12 @@ func ReadLines(reader io.Reader) iter.Seq[string] {
 	pull, stop := chunks.Pull()
 	defer stop()
 
-	rows := SplitBySeparator(func(yield func([]byte) bool) {
+	return SplitBySeparator(func(yield func([]byte) bool) {
 		for r, ok := pull(); ok; r, ok = pull() {
 			if r.V != nil || !yield(r.K) {
 				return
 			}
 		}
-	}, '\n')
-
-	return iter.Map(rows, func(x []byte) string { return string(x) })
+	}, '\n').
+		Map(func(x []byte) string { return string(x) })
 }

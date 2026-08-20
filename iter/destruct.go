@@ -36,7 +36,7 @@ func (seq Seq[V]) Head() (V, bool) {
 }
 
 // Reduce reduces seq into one value using given operation.
-func Reduce[A, B any](seq Seq[B], start A, op func(A, B) A) A {
+func (seq Seq[B]) Reduce[A any](start A, op func(A, B) A) A {
 	acc := start
 	seq(func(b B) bool {
 		acc = op(acc, b)
@@ -48,7 +48,7 @@ func Reduce[A, B any](seq Seq[B], start A, op func(A, B) A) A {
 // Sum finds sum of elements in stream.
 func Sum[A fun.Number](xs Seq[A]) A {
 	var zero A
-	return Reduce(xs, zero, func(x A, y A) A {
+	return xs.Reduce(zero, func(x A, y A) A {
 		return x + y
 	})
 }
@@ -64,7 +64,7 @@ func (seq Seq[V]) Count() int {
 }
 
 // Group groups elements by a function that returns a key.
-func Group[K comparable, V any](seq Seq[V], by func(V) K) map[K][]V {
+func (seq Seq[V]) Group[K comparable](by func(V) K) map[K][]V {
 	res := make(map[K][]V)
 	seq(func(v V) bool {
 		key := by(v)
@@ -75,8 +75,8 @@ func Group[K comparable, V any](seq Seq[V], by func(V) K) map[K][]V {
 }
 
 // GroupAggregate is a convenience function that groups and then maps the subslices.
-func GroupAggregate[A, B any, K comparable](seq Seq[A], by func(A) K, aggregate func([]A) B) map[K]B {
-	tmp := Group(seq, by)
+func (seq Seq[A]) GroupAggregate[B any, K comparable](by func(A) K, aggregate func([]A) B) map[K]B {
+	tmp := seq.Group(by)
 	res := make(map[K]B, len(tmp))
 	for k, v := range tmp {
 		res[k] = aggregate(v)
@@ -85,13 +85,13 @@ func GroupAggregate[A, B any, K comparable](seq Seq[A], by func(A) K, aggregate 
 }
 
 // ToCounterBy consumes the seq and returns Counter with count of how many times each key was seen.
-func ToCounterBy[K comparable, V any](seq Seq[V], by func(V) K) map[K]int {
-	return GroupAggregate(seq, by, func(ys []V) int { return len(ys) })
+func (seq Seq[V]) ToCounterBy[K comparable](by func(V) K) map[K]int {
+	return seq.GroupAggregate(by, func(ys []V) int { return len(ys) })
 }
 
 // ToCounter consumes the seq makes Counter with count of how many times each element was seen.
 func ToCounter[V comparable](seq Seq[V]) map[V]int {
-	return ToCounterBy(seq, func(v V) V { return v })
+	return seq.ToCounterBy(func(v V) V { return v })
 }
 
 // Any consumes the seq and checks if any of the seq elements matches the predicate
