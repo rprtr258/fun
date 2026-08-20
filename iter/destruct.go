@@ -8,7 +8,7 @@ import (
 )
 
 // ForEach invokes a simple function for each element of the seq.
-func ForEach[V any](seq Seq[V], f func(V)) {
+func (seq Seq[V]) ForEach(f func(V)) {
 	seq(func(v V) bool {
 		f(v)
 		return true
@@ -16,14 +16,14 @@ func ForEach[V any](seq Seq[V], f func(V)) {
 }
 
 // ToSet executes the seq and collects all results to a set.
-func ToSet[A comparable](seq Seq[A]) set.Set[A] {
-	set := set.New[A](0)
-	ForEach(seq, func(a A) { set.Add(a) })
+func ToSet[V comparable](seq Seq[V]) set.Set[V] {
+	set := set.New[V](0)
+	seq.ForEach(func(a V) { set.Add(a) })
 	return set
 }
 
 // Head takes the first element if present.
-func Head[V any](seq Seq[V]) (V, bool) {
+func (seq Seq[V]) Head() (V, bool) {
 	var (
 		res V
 		ok  bool
@@ -54,7 +54,7 @@ func Sum[A fun.Number](xs Seq[A]) A {
 }
 
 // Count returns seq length.
-func Count[V any](seq Seq[V]) int {
+func (seq Seq[V]) Count() int {
 	res := 0
 	seq(func(V) bool {
 		res++
@@ -95,7 +95,7 @@ func ToCounter[V comparable](seq Seq[V]) map[V]int {
 }
 
 // Any consumes the seq and checks if any of the seq elements matches the predicate
-func Any[V any](seq Seq[V], p func(V) bool) bool {
+func (seq Seq[V]) Any(p func(V) bool) bool {
 	found := false
 	seq(func(v V) bool {
 		found = p(v)
@@ -105,7 +105,7 @@ func Any[V any](seq Seq[V], p func(V) bool) bool {
 }
 
 // All consumes the seq and checks if all of the seq elements match the predicate
-func All[V any](seq Seq[V], p func(V) bool) bool {
+func (seq Seq[V]) All(p func(V) bool) bool {
 	res := true
 	seq(func(v V) bool {
 		if !p(v) {
@@ -116,7 +116,7 @@ func All[V any](seq Seq[V], p func(V) bool) bool {
 	return res
 }
 
-func Pull[V any](push Seq[V]) (pull func() (V, bool), stop func()) {
+func (push Seq[V]) Pull() (pull func() (V, bool), stop func()) {
 	copush := func(more bool, yield func(V) bool) V {
 		if more {
 			push(yield)
@@ -155,10 +155,10 @@ func Pull[V any](push Seq[V]) (pull func() (V, bool), stop func()) {
 }
 
 // Find searches for first element matching the predicate.
-func Find[A any](xs Seq[A], p func(A) bool) (A, bool) {
-	var aa A
+func (xs Seq[V]) Find(p func(V) bool) (V, bool) {
+	var aa V
 	found := false
-	xs(func(a A) bool {
+	xs(func(a V) bool {
 		if p(a) {
 			found = true
 			aa = a

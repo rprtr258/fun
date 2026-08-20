@@ -56,7 +56,7 @@ func SplitBySeparator(seq iter.Seq[[]byte], sep byte) iter.Seq[[]byte] {
 func ReadLines(reader io.Reader) iter.Seq[string] {
 	chunks := ReadByteChunks(reader, defaultChunkSize)
 
-	pull, stop := iter.Pull(chunks)
+	pull, stop := chunks.Pull()
 	defer stop()
 
 	rows := SplitBySeparator(func(yield func([]byte) bool) {

@@ -2,9 +2,7 @@ package iter
 
 import (
 	"errors"
-	"fmt"
 	"io"
-	"os"
 )
 
 type (
@@ -42,18 +40,6 @@ func Backward[T any](s []T) Seq2[int, T] {
 	}
 }
 
-func exampleBackward() {
-	s := []int{1, 2, 3}
-	for it := Backward(s); ; {
-		_, el, ok := it(false)
-		if !ok {
-			break // it(true) does not need to be called because the `false` was called
-		}
-
-		fmt.Print(el, " ")
-	}
-}
-
 func Reader(r io.ReadCloser) func(bool) ([]byte, error) {
 	var err error
 	b := make([]byte, 4*1024)
@@ -67,17 +53,5 @@ func Reader(r io.ReadCloser) func(bool) ([]byte, error) {
 			err = ErrEnd
 		}
 		return b[:n], err
-	}
-}
-
-func example() {
-	f, _ := os.Open("aboba.txt")
-	for it := Reader(f); ; {
-		b, err := it(false)
-		if err != nil {
-			break // it(true) does not need to be called because the `false` was called
-		}
-
-		fmt.Print(string(b))
 	}
 }
