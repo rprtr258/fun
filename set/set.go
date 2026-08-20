@@ -1,7 +1,5 @@
 package set
 
-import "iter"
-
 // Set is a collection of distinct elements.
 type Set[T comparable] struct {
 	m map[T]struct{}
@@ -36,12 +34,10 @@ func (s Set[T]) Copy() Set[T] {
 	return res
 }
 
-func (s Set[T]) Iter() iter.Seq[T] {
-	return func(yield func(T) bool) {
-		for a := range s.m {
-			if !yield(a) {
-				break
-			}
+func (s Set[T]) All(yield func(T) bool) {
+	for a := range s.m {
+		if !yield(a) {
+			break
 		}
 	}
 }
