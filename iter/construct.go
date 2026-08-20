@@ -81,7 +81,5 @@ func FromInfiniteGenerator[T any](f func(func(T))) Seq[T] {
 		f(func(t T) {
 			yield(t)
 		})
-
-		return
 	}
 }

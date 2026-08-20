@@ -6,6 +6,7 @@ package json
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/rprtr258/fun"
@@ -124,11 +125,6 @@ func List[T any](decoder Decoder[T]) Decoder[[]T] {
 	}
 }
 
-// TODO: expressible as required
-func Field[T any](name string, decoder Decoder[T]) Decoder[T] {
-	return Required(name, decoder)
-}
-
 func OneOf[T any](decoders ...Decoder[T]) Decoder[T] {
 	return func(v any, res *T) error {
 		errors := make([]error, len(decoders))
@@ -179,8 +175,8 @@ func Fail[T any](msg string) Decoder[T] {
 }
 
 // Decode a Required field.
-func Required[A any](name string, da Decoder[A]) Decoder[A] {
-	return func(v any, res *A) error {
+func (decoder Decoder[T]) Field(name string) Decoder[T] {
+	return func(v any, res *T) error {
 		vm, ok := v.(map[string]any)
 		if !ok {
 			return fmt.Errorf("not a dict")
@@ -190,22 +186,22 @@ func Required[A any](name string, da Decoder[A]) Decoder[A] {
 			return fmt.Errorf("key %q not found", name)
 		}
 
-		if err := da(v, res); err != nil {
+		if err := decoder(v, res); err != nil {
 			return err
 		}
 		return nil
 	}
 }
 
-func At[T any](names []string, decoder Decoder[T]) Decoder[T] {
+func (decoder Decoder[T]) At(names []string) Decoder[T] {
 	res := decoder
-	for i := len(names) - 1; i >= 0; i-- {
-		res = Field(names[i], res)
+	for _, name := range slices.Backward(names) {
+		res = res.Field(name)
 	}
 	return res
 }
 
-func Index[T any](i int, decoder Decoder[T]) Decoder[T] {
+func (decoder Decoder[T]) Index(i int) Decoder[T] {
 	return func(v any, res *T) error {
 		vl, ok := v.([]any)
 		if !ok {
@@ -220,12 +216,8 @@ func Index[T any](i int, decoder Decoder[T]) Decoder[T] {
 	}
 }
 
-func Optional[A any](
-	name string,
-	da Decoder[A],
-	fallback A,
-) Decoder[A] {
-	return func(v any, res *A) error {
+func (da Decoder[T]) Optional(name string, fallback T) Decoder[T] {
+	return func(v any, res *T) error {
 		x, ok := v.(map[string]any)
 		if !ok {
 			return fmt.Errorf("not a dict")
@@ -243,11 +235,11 @@ func Optional[A any](
 	}
 }
 
-func Option[A any](
+func Option[T any](
 	name string,
-	da Decoder[A],
-) Decoder[fun.Option[A]] {
-	return func(v any, res *fun.Option[A]) error {
+	da Decoder[T],
+) Decoder[fun.Option[T]] {
+	return func(v any, res *fun.Option[T]) error {
 		x, ok := v.(map[string]any)
 		if !ok {
 			return nil
@@ -265,10 +257,7 @@ func Option[A any](
 	}
 }
 
-func Validate[T any](
-	check func(T) error,
-	d Decoder[T],
-) Decoder[T] {
+func (d Decoder[T]) Validate(check func(T) error) Decoder[T] {
 	return func(v any, res *T) error {
 		if err := d(v, res); err != nil {
 			return err

@@ -24,7 +24,7 @@ func ExampleAndThen() {
 		}
 	}
 
-	info := AndThen(Field("version", Int), infoHelp)
+	info := AndThen(Int.Field("version"), infoHelp)
 	_ = info
 }
 
@@ -38,9 +38,9 @@ var decoderUser = Map3(
 	func(id int, name string, email string) User {
 		return User{id, name, email}
 	},
-	Required("id", Int),
-	Required("name", String),
-	Required("email", String),
+	Int.Field("id"),
+	String.Field("name"),
+	String.Field("email"),
 )
 
 func TestUser(t *testing.T) {
@@ -66,11 +66,11 @@ func Example() {
 		completed bool
 	}
 
-	var point Decoder[Job] = Map3(
+	point := Map3(
 		func(name string, id int, completed bool) Job { return Job{name, id, completed} },
-		Field("name", String),
-		Field("id", Int),
-		Field("completed", Bool),
+		String.Field("name"),
+		Int.Field("id"),
+		Bool.Field("completed"),
 	)
 	_ = point
 }

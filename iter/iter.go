@@ -11,11 +11,10 @@ import (
 	"github.com/rprtr258/fun/set"
 )
 
-type Seq[V any] iter.Seq[V]
-
-func (seq Seq[V]) Filter(p func(V) bool) Seq[V] {
-	return Filter(seq, p)
-}
+type (
+	Seq[V any]     iter.Seq[V]
+	Seq2[K, V any] iter.Seq2[K, V]
+)
 
 func (seq Seq[V]) Map(f func(V) V) Seq[V] {
 	return Map(seq, f)
@@ -29,32 +28,8 @@ func (seq Seq[V]) FlatMap(f func(V) Seq[V]) Seq[V] {
 	return FlatMap(seq, f)
 }
 
-func (seq Seq[V]) Take(n int) Seq[V] {
-	return Take(seq, n)
-}
-
-func (seq Seq[V]) Head() (V, bool) {
-	return Head(seq)
-}
-
-func (seq Seq[V]) ForEach(f func(V)) {
-	ForEach(seq, f)
-}
-
-func (seq Seq[V]) Any(p func(V) bool) bool {
-	return Any(seq, p)
-}
-
-func (seq Seq[V]) All(p func(V) bool) bool {
-	return All(seq, p)
-}
-
 func (seq Seq[V]) Slice() []V {
 	return slices.Collect(iter.Seq[V](seq))
-}
-
-func (seq Seq[V]) Count() int {
-	return Count(seq)
 }
 
 func (seq Seq[V]) Chain(other Seq[V]) Seq[V] {
@@ -70,7 +45,7 @@ func Map[I, O any](seq Seq[I], f func(I) O) Seq[O] {
 	}
 }
 
-func MapTo2[T, K, V any](seq Seq[T], f func(T) (K, V)) iter.Seq2[K, V] {
+func MapTo2[T, K, V any](seq Seq[T], f func(T) (K, V)) Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		seq(func(a T) bool {
 			return yield(f(a))
@@ -78,7 +53,7 @@ func MapTo2[T, K, V any](seq Seq[T], f func(T) (K, V)) iter.Seq2[K, V] {
 	}
 }
 
-func MapFrom2[T, K, V any](seq iter.Seq2[K, V], f func(K, V) T) Seq[T] {
+func MapFrom2[T, K, V any](seq Seq2[K, V], f func(K, V) T) Seq[T] {
 	return func(yield func(T) bool) {
 		for k, v := range seq {
 			if !yield(f(k, v)) {
@@ -88,7 +63,7 @@ func MapFrom2[T, K, V any](seq iter.Seq2[K, V], f func(K, V) T) Seq[T] {
 	}
 }
 
-func Map2[A, B, K, V any](seq iter.Seq2[A, B], f func(A, B) (K, V)) iter.Seq2[K, V] {
+func Map2[A, B, K, V any](seq Seq2[A, B], f func(A, B) (K, V)) Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		seq(func(a A, b B) bool {
 			return yield(f(a, b))
@@ -120,9 +95,9 @@ func Concat[V any](seqs ...Seq[V]) Seq[V] {
 // If the two input sequences are not ordered by f,
 // the output sequence will not be ordered by f,
 // but it will still contain every value from x and y exactly once.
-func MergeFunc[V any](x, y Seq[V], f func(V, V) int) Seq[V] {
+func (x Seq[V]) MergeFunc(y Seq[V], f func(V, V) int) Seq[V] {
 	return func(yield func(V) bool) {
-		next, stop := Pull(y)
+		next, stop := y.Pull()
 		defer stop()
 		vy, ok := next()
 		x(func(vx V) bool {
@@ -132,10 +107,7 @@ func MergeFunc[V any](x, y Seq[V], f func(V, V) int) Seq[V] {
 				}
 				vy, ok = next()
 			}
-			if !yield(vx) {
-				return false
-			}
-			return true
+			return yield(vx)
 		})
 
 		for ; ok; vy, ok = next() {
@@ -156,7 +128,7 @@ func MergeFunc[V any](x, y Seq[V], f func(V, V) int) Seq[V] {
 // Merge is equivalent to calling MergeFunc with cmp.Compare[V]
 // as the ordering function.
 func Merge[V cmp.Ordered](x, y Seq[V]) Seq[V] {
-	return MergeFunc(x, y, cmp.Compare[V])
+	return x.MergeFunc(y, cmp.Compare[V])
 }
 
 // FlatMap maps stream using function and concatenates result streams into one.
@@ -189,15 +161,15 @@ func Flatten[V any](seqseq Seq[Seq[V]]) Seq[V] {
 
 // Chunked groups elements by n and produces a stream of slices.
 // Produced chunks must not be retained.
-func Chunked[A any](xs Seq[A], n int) Seq[[]A] {
+func Chunked[V any](xs Seq[V], n int) Seq[[]V] {
 	if n <= 0 {
 		panic(fmt.Sprintf("Chunk must be of positive size, but %d given", n))
 	}
 
-	return func(yield func([]A) bool) {
-		chunk := make([]A, 0, n)
-		xs(func(a A) bool {
-			chunk = append(chunk, a)
+	return func(yield func([]V) bool) {
+		chunk := make([]V, 0, n)
+		xs(func(v V) bool {
+			chunk = append(chunk, v)
 			if len(chunk) == n {
 				if !yield(chunk) {
 					return false
@@ -215,43 +187,39 @@ func Chunked[A any](xs Seq[A], n int) Seq[[]A] {
 }
 
 // Intersperse adds a separator after each stream element.
-func Intersperse[A any](xs Seq[A], sep A) Seq[A] {
-	return func(yield func(A) bool) {
+func (xs Seq[V]) Intersperse(sep V) Seq[V] {
+	return func(yield func(V) bool) {
 		isFirst := true
-		xs(func(a A) bool {
+		xs(func(v V) bool {
 			if !isFirst && !yield(sep) {
 				return false
 			}
 
 			isFirst = false
 
-			if !yield(a) {
-				return false
-			}
-
-			return true
+			return yield(v)
 		})
 	}
 }
 
-func Keys[K, V any](xs iter.Seq2[K, V]) Seq[K] {
+func (xs Seq2[K, V]) Keys() Seq[K] {
 	return MapFrom2(xs, func(k K, _ V) K {
 		return k
 	})
 }
 
-func Values[K, V any](xs iter.Seq2[K, V]) Seq[V] {
+func (xs Seq2[K, V]) Values() Seq[V] {
 	return MapFrom2(xs, func(_ K, v V) V {
 		return v
 	})
 }
 
 // Repeat appends the same stream infinitely.
-func Repeat[A any](xs Seq[A]) Seq[A] {
-	return func(yield func(A) bool) {
+func (xs Seq[V]) Repeat() Seq[V] {
+	return func(yield func(V) bool) {
 		for {
 			cont := true
-			xs(func(x A) bool {
+			xs(func(x V) bool {
 				cont = cont && yield(x)
 				return cont
 			})
@@ -263,7 +231,7 @@ func Repeat[A any](xs Seq[A]) Seq[A] {
 }
 
 // Take cuts the stream after n elements.
-func Take[V any](xs Seq[V], n int) Seq[V] {
+func (xs Seq[V]) Take(n int) Seq[V] {
 	if n < 0 {
 		panic(fmt.Sprintf("Take size must be non-negative, but %d given", n))
 	}
@@ -276,22 +244,18 @@ func Take[V any](xs Seq[V], n int) Seq[V] {
 			}
 
 			took++
-			if !yield(v) {
-				return false
-			}
-
-			return true
+			return yield(v)
 		})
 	}
 }
 
 // Skip skips n elements in the stream.
-func Skip[A any](xs Seq[A], n int) Seq[A] {
-	return func(yield func(A) bool) {
+func (xs Seq[V]) Skip(n int) Seq[V] {
+	return func(yield func(V) bool) {
 		skipped := 0
-		xs(func(a A) bool {
+		xs(func(v V) bool {
 			if skipped == n {
-				if !yield(a) {
+				if !yield(v) {
 					return false
 				}
 			} else {
@@ -303,38 +267,38 @@ func Skip[A any](xs Seq[A], n int) Seq[A] {
 }
 
 // Filter leaves in the stream only the elements that satisfy the given predicate.
-func Filter[V any](seq Seq[V], p func(V) bool) Seq[V] {
+func (seq Seq[V]) Filter(p func(V) bool) Seq[V] {
 	return func(yield func(V) bool) {
-		seq(func(a V) bool {
-			return !p(a) || yield(a)
+		seq(func(v V) bool {
+			return !p(v) || yield(v)
 		})
 	}
 }
 
 // TakeWhile takes elements while predicate is true.
-func TakeWhile[A any](xs Seq[A], p func(A) bool) Seq[A] {
-	return func(yield func(A) bool) {
-		xs(func(a A) bool {
-			return p(a) && yield(a)
+func (xs Seq[V]) TakeWhile(p func(V) bool) Seq[V] {
+	return func(yield func(V) bool) {
+		xs(func(v V) bool {
+			return p(v) && yield(v)
 		})
 	}
 }
 
 // DebugSeq prints every processed element, without changing it.
-func DebugSeq[A any](xs Seq[A]) Seq[A] {
-	return Map(xs, fun.Debug[A])
+func (xs Seq[V]) DebugSeq() Seq[V] {
+	return Map(xs, fun.Debug[V])
 }
 
 // DebugSeqP prints every processed element, without changing it.
-func DebugSeqP[A any](prefix string, xs Seq[A]) Seq[A] {
-	return Map(xs, fun.DebugP[A](prefix))
+func (xs Seq[V]) DebugSeqP(prefix string) Seq[V] {
+	return Map(xs, fun.DebugP[V](prefix))
 }
 
 // Unique makes stream of unique elements.
-func Unique[A comparable](xs Seq[A]) Seq[A] {
-	seen := set.New[A](0)
-	return func(yield func(A) bool) {
-		xs(func(x A) bool {
+func Unique[V comparable](xs Seq[V]) Seq[V] {
+	seen := set.New[V](0)
+	return func(yield func(V) bool) {
+		xs(func(x V) bool {
 			if !seen.Contains(x) {
 				if !yield(x) {
 					return false
