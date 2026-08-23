@@ -10,7 +10,7 @@ import (
 
 // Copy slice
 func Copy[T any](slice ...T) []T {
-	res := make([]T, 0, len(slice))
+	res := make([]T, len(slice))
 	copy(res, slice)
 	return res
 }

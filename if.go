@@ -1,5 +1,6 @@
 package fun
 
+// Simple ternary function.
 func IF[T any](predicate bool, ifTrue, ifFalse T) T {
 	if predicate {
 		return ifTrue
@@ -12,6 +13,7 @@ type ifElse[T any] struct {
 	predicate bool
 }
 
+// Returns value from branch for which predicate is true. `F` suffix can be used to get values not evaluated immediately.
 func If[T any](predicate bool, value T) ifElse[T] { //nolint:revive // don't export type
 	return ifElse[T]{
 		predicate: predicate,

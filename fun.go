@@ -11,6 +11,7 @@ type Pair[K, V any] struct {
 	V V
 }
 
+// Returns zero value of given type.
 func Zero[T any]() T {
 	var zero T
 	return zero
@@ -39,11 +40,13 @@ func Debug[V any](v V) V {
 	return v
 }
 
+// Returns true if map has such key.
 func Has[K comparable, V any](dict map[K]V, key K) bool {
 	_, ok := dict[key]
 	return ok
 }
 
+// Returns first value for which true is returned.
 func Cond[R any](defaultValue R, cases ...func() (R, bool)) R {
 	for _, case_ := range cases {
 		if res, ok := case_(); ok {
@@ -54,10 +57,12 @@ func Cond[R any](defaultValue R, cases ...func() (R, bool)) R {
 	return defaultValue
 }
 
+// Returns pointer to value.
 func Ptr[T any](t T) *T {
 	return &t
 }
 
+// Returns value from pointer. If pointer is nil returns zero value.
 func Deref[T any](ptr *T) T {
 	if ptr == nil {
 		return Zero[T]()
@@ -65,6 +70,7 @@ func Deref[T any](ptr *T) T {
 	return *ptr
 }
 
+// Returns value after applying endomorphisms. Endomorphism is just function from type to itself.
 func Pipe[T any](t T, endos ...func(T) T) T {
 	for _, endo := range endos {
 		t = endo(t)

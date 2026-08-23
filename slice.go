@@ -2,6 +2,7 @@ package fun
 
 import "github.com/rprtr258/fun/exp/zun"
 
+// Map applies function to all elements and returns slice with results.
 func Map[R, T any, F interface {
 	func(T) R | func(T, int) R
 }](f F, slice ...T) []R {
@@ -21,6 +22,7 @@ func Map[R, T any, F interface {
 	return res
 }
 
+// Filter slice elements using given predicate.
 func Filter[T any, F interface {
 	func(T) bool | func(T, int) bool
 }](f F, slice ...T) []T {
@@ -36,6 +38,7 @@ func Filter[T any, F interface {
 	return res
 }
 
+// FilterMap transform each element, leaving only those for which true is returned.
 func FilterMap[R, T any, F interface {
 	func(T) (R, bool) | func(T, int) (R, bool) |
 		func(T) Option[R] | func(T, int) Option[R]
@@ -60,6 +63,7 @@ func FilterMap[R, T any, F interface {
 	return res
 }
 
+// MapDict like `Map` but uses dictionary instead of transform function.
 func MapDict[T comparable, R any](dict map[T]R, collection ...T) []R {
 	result := make([]R, len(collection))
 	for i, item := range collection {
@@ -68,6 +72,7 @@ func MapDict[T comparable, R any](dict map[T]R, collection ...T) []R {
 	return result
 }
 
+// MapErr like `Map` but returns first error got from transform.
 func MapErr[R, T any, F interface {
 	func(T) (R, error) | func(T, int) (R, error)
 }](f F, slice ...T) ([]R, error) {
@@ -87,12 +92,14 @@ func MapErr[R, T any, F interface {
 	return res, nil
 }
 
+// MapToSlice transforms map to slice using transform function. Order is not guaranteed.
 func MapToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) R) []R {
 	res := make([]R, 0, len(dict))
 	zun.MapToSlice(&res, dict, f)
 	return res
 }
 
+// MapFilterToSlice transforms map to slice using transform function and returns only those for which true is returned. Order is not guaranteed.
 func MapFilterToSlice[K comparable, V, R any](dict map[K]V, f func(K, V) (R, bool)) []R {
 	res := make([]R, 0, len(dict))
 	zun.MapFilterToSlice(&res, dict, f)
@@ -111,11 +118,12 @@ func Values[K comparable, V any](dict map[K]V) []V {
 	return res
 }
 
-func Entries[K comparable, V any](dict map[K]V) []Pair[K, V] {
-	res := make([]Pair[K, V], 0, len(dict))
-	for k, v := range dict {
-		res = append(res, Pair[K, V]{k, v})
-	}
+// Entries makes slice of key/value pairs from map.
+func Entries[K comparable, V any](m map[K]V) []Pair[K, V] {
+	res := make([]Pair[K, V], 0, len(m))
+	zun.MapToSlice(&res, m, func(k K, v V) Pair[K, V] {
+		return Pair[K, V]{k, v}
+	})
 	return res
 }
 
@@ -138,8 +146,17 @@ func Uniq[T comparable](collection ...T) []T {
 }
 
 // Index returns first found element by predicate along with it's index
-func Index[T any](find func(T) bool, slice ...T) (T, int, bool) {
-	return zun.Index(find, slice...)
+func Index[T any, F interface {
+	func(T) bool | func(T, int) bool
+}](find F, slice ...T) (T, int, bool) {
+	switch f := any(find).(type) {
+	case func(T) bool:
+		return zun.Index(f, slice...)
+	case func(T, int) bool:
+		return zun.IndexI(f, slice...)
+	default:
+		panic("unreachable")
+	}
 }
 
 // Contains returns true if an element is present in a collection.
@@ -163,13 +180,4 @@ func SliceToMap[K comparable, V, T any, F interface {
 		panic("unreachable")
 	}
 	return res
-}
-
-// FromMap makes slice of key/value pairs from map.
-func FromMap[A comparable, B any](kv map[A]B) []Pair[A, B] {
-	kvs := make([]Pair[A, B], 0, len(kv))
-	zun.MapToSlice(&kvs, kv, func(k A, v B) Pair[A, B] {
-		return Pair[A, B]{k, v}
-	})
-	return kvs
 }

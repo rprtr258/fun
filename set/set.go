@@ -143,10 +143,10 @@ func (s Set[T]) Remove(as ...T) {
 
 // Subtract bss from as. Returns set with elements which are in as but not in
 // any of bss.
-func Subtract[T comparable](as Set[T], bss ...Set[T]) Set[T] {
+func (s Set[T]) Subtract(bss ...Set[T]) Set[T] {
 	res := New[T](0)
 OUTER:
-	for a := range as.m {
+	for a := range s.m {
 		for _, bs := range bss {
 			if bs.Contains(a) {
 				continue OUTER
@@ -158,7 +158,7 @@ OUTER:
 }
 
 // Intersect finds sets intersection.
-func Intersect[T comparable](as Set[T], bss ...Set[T]) Set[T] {
+func (as Set[T]) Intersect(bss ...Set[T]) Set[T] {
 	res := New[T](0)
 OUTER:
 	for a := range as.m {
@@ -172,7 +172,7 @@ OUTER:
 	return res
 }
 
-func Union[T comparable](as Set[T], bss ...Set[T]) Set[T] {
+func (as Set[T]) Union(bss ...Set[T]) Set[T] {
 	res := as.Copy()
 	for _, bs := range bss {
 		for b := range bs.m {
@@ -182,7 +182,7 @@ func Union[T comparable](as Set[T], bss ...Set[T]) Set[T] {
 	return res
 }
 
-func SymmetricDifference[T comparable](as, bs Set[T]) Set[T] {
+func (as Set[T]) SymmetricDifference(bs Set[T]) Set[T] {
 	res := New[T](0)
 	for a := range as.m {
 		if !bs.Contains(a) {

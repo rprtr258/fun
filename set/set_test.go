@@ -34,7 +34,7 @@ func TestSetIntersect(t *testing.T) {
 	set2 := set.New[int](0)
 	set2.Add(1)
 	set2.Add(3)
-	setIntersection := set.Intersect(set1, set2)
+	setIntersection := set1.Intersect(set2)
 	assert.True(t, setIntersection.Contains(1))
 	assert.False(t, setIntersection.Contains(2))
 	assert.False(t, setIntersection.Contains(3))

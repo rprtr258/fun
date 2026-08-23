@@ -37,10 +37,12 @@ func (o *Option[T]) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &o.Value)
 }
 
+// Returns empty Option.
 func Invalid[T any]() Option[T] {
 	return Option[T]{}
 }
 
+// Returns Option with given value.
 func Valid[T any](t T) Option[T] {
 	return Option[T]{
 		Value: t,
@@ -48,6 +50,7 @@ func Valid[T any](t T) Option[T] {
 	}
 }
 
+// Returns Option with given value and validity.
 func Optional[T any](value T, valid bool) Option[T] {
 	return Option[T]{
 		Value: value,
@@ -55,6 +58,7 @@ func Optional[T any](value T, valid bool) Option[T] {
 	}
 }
 
+// Returns Option with value from pointer.
 func FromPtr[T any](ptr *T) Option[T] {
 	if ptr == nil {
 		return Invalid[T]()
@@ -63,18 +67,22 @@ func FromPtr[T any](ptr *T) Option[T] {
 	return Valid(*ptr)
 }
 
+// Returns value and validity.
 func (o Option[T]) Unpack() (T, bool) {
 	return o.Value, o.Valid
 }
 
+// Returns first valid Option.
 func (o Option[T]) Or(other Option[T]) Option[T] {
 	return IF(o.Valid, o, other)
 }
 
+// Returns value if Option is valid, otherwise returns default value.
 func (o Option[T]) OrDefault(value T) T {
 	return IF(o.Valid, o.Value, value)
 }
 
+// Returns pointer to value if Option is valid, otherwise returns nil.
 func (opt Option[T]) Ptr() *T {
 	if !opt.Valid {
 		return nil
@@ -83,6 +91,7 @@ func (opt Option[T]) Ptr() *T {
 	return &opt.Value
 }
 
+// Returns new Option with transformed value.
 func OptMap[I, O any](o Option[I], f func(I) O) Option[O] {
 	if !o.Valid {
 		return Invalid[O]()
@@ -90,6 +99,7 @@ func OptMap[I, O any](o Option[I], f func(I) O) Option[O] {
 	return Valid(f(o.Value))
 }
 
+// Returns new Option with transformed optional value.
 func OptFlatMap[I, O any](o Option[I], f func(I) Option[O]) Option[O] {
 	if !o.Valid {
 		return Invalid[O]()

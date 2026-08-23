@@ -1,6 +1,7 @@
 package fun_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/rprtr258/assert"
@@ -33,4 +34,9 @@ func TestChunk(t *testing.T) {
 			assert.Equal(t, test.want, got)
 		})
 	}
+}
+
+func ExampleCopy() {
+	fmt.Println(fun.Copy(1, 2, 3))
+	// Output: [1 2 3]
 }

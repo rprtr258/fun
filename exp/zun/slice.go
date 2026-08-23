@@ -184,6 +184,20 @@ func Index[T any](
 	return *new(T), -1, false
 }
 
+// IndexI returns first found element by predicate along with it's index
+func IndexI[T any](
+	find func(T, int) bool,
+	slice ...T,
+) (T, int, bool) {
+	for i, x := range slice {
+		if find(x, i) {
+			return x, i, true
+		}
+	}
+
+	return *new(T), -1, false
+}
+
 // Contains returns true if an element is present in a collection.
 func Contains[T comparable](needle T, slice ...T) bool {
 	_, _, ok := Index(func(x T) bool {

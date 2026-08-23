@@ -1,3 +1,4 @@
+// Utilities utilizing values comparison.
 package fun
 
 import "cmp"
