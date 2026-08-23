@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/rprtr258/fun.svg)](https://pkg.go.dev/github.com/rprtr258/fun)
+
 # Iterator and functional utilities
 
 The design is inspired by [samber/lo](https://github.com/samber/lo) and [iterator proposal](https://github.com/golang/go/issues/61897). This library does not deal with channel/pipes/concurrency as that is beyond the scope of this project.
