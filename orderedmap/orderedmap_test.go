@@ -28,14 +28,14 @@ func TestSimple(t *testing.T) {
 	assert.Equal(t, 6, tree.Size())
 	for i := range 6 {
 		got, ok := tree.Kth(i)
-		assert.Assert(t, ok && got == i)
+		assert.True(t, ok && got == i)
 	}
 
 	min, ok := tree.Min()
-	assert.Assert(t, ok && min == 0)
+	assert.True(t, ok && min == 0)
 
 	max, ok := tree.Max()
-	assert.Assert(t, ok && max == 5)
+	assert.True(t, ok && max == 5)
 }
 
 func TestCrossCheck(t *testing.T) {
