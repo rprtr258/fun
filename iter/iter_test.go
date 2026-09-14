@@ -24,7 +24,7 @@ var (
 func TestStream(t *testing.T) {
 	t.Parallel()
 
-	assertStream(t, iter.Map(iter.FromMany(10, 11, 12), mul2), []int{20, 22, 24})
+	assertStream(t, iter.FromMany(10, 11, 12).Map(mul2), []int{20, 22, 24})
 }
 
 func TestGenerate(t *testing.T) {
@@ -65,10 +65,10 @@ func TestSum(t *testing.T) {
 func TestFlatMap(t *testing.T) {
 	t.Parallel()
 
-	nats3 := func(yield func(int) bool) {
+	nats3 := iter.Seq[int](func(yield func(int) bool) {
 		_ = !yield(0) || !yield(1) || !yield(2)
-	}
-	assertStream(t, iter.FlatMap(nats3, func(i int) iter.Seq[int] {
+	})
+	assertStream(t, nats3.FlatMap(func(i int) iter.Seq[int] {
 		return func(yield func(int) bool) {
 			_ = !yield(i*3) || !yield(i*4) || !yield(i*5)
 		}
@@ -82,7 +82,7 @@ func TestFlatMap(t *testing.T) {
 func TestFlatMap2(t *testing.T) {
 	t.Parallel()
 
-	floatsNested := iter.FlatMap(nats10, func(i int) iter.Seq[float32] {
+	floatsNested := nats10.FlatMap(func(i int) iter.Seq[float32] {
 		return iter.FromMany(float32(i), float32(2*i))
 	})
 	floats := iter.Sum(floatsNested)
@@ -138,10 +138,11 @@ func TestUnique(t *testing.T) {
 func TestGroupBy(t *testing.T) {
 	t.Parallel()
 
-	intsDuplicated := iter.FlatMap(nats10, func(i int) iter.Seq[int] {
-		return iter.Map(nats10, func(j int) int { return i + j })
-	})
-	intsGroups := iter.Group(intsDuplicated, func(i int) int { return i })
+	intsGroups := nats10.
+		FlatMap(func(i int) iter.Seq[int] {
+			return nats10.Map(func(j int) int { return i + j })
+		}).
+		Group(func(i int) int { return i })
 	assert.Equal(t, 19, len(intsGroups))
 	for k, as := range intsGroups {
 		assert.Equal(t, k, as[0])
@@ -173,7 +174,7 @@ func TestGrouped(t *testing.T) {
 func TestGroupByMapCount(t *testing.T) {
 	t.Parallel()
 
-	counter := iter.ToCounterBy(nats10, isEven)
+	counter := nats10.ToCounterBy(isEven)
 	assert.Equal(t, 5, counter[false])
 	assert.Equal(t, 5, counter[true])
 }

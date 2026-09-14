@@ -23,7 +23,7 @@ func WriteByteChunks(writer io.Writer, xs s.Seq[[]byte]) {
 
 // MapStringToBytes converts stream of strings to stream of byte chunks.
 func MapStringToBytes(stm s.Seq[string]) s.Seq[[]byte] {
-	return s.Map(stm, func(s string) []byte { return []byte(s) })
+	return stm.Map(func(s string) []byte { return []byte(s) })
 }
 
 // WriteLines creates a sink that receives strings and saves them to writer.

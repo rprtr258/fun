@@ -7,7 +7,7 @@ import (
 	"github.com/rprtr258/assert"
 )
 
-func ExampleAndThen() {
+func ExampleDecoder_AndThen() {
 	type Info struct{}
 
 	var infoDecoderV4 Decoder[Info]
@@ -24,7 +24,7 @@ func ExampleAndThen() {
 		}
 	}
 
-	info := AndThen(Int.Field("version"), infoHelp)
+	info := Int.Field("version").AndThen(infoHelp)
 	_ = info
 }
 
@@ -48,7 +48,7 @@ func TestUser(t *testing.T) {
 
 	result, err := decoderUser.ParseString(`{"id": 123, "email": "sam@example.com", "name": "Sam"}`)
 	assert.NoError(t, err)
-	assert.Assert(t, result == User{123, "Sam", "sam@example.com"})
+	assert.True(t, result == User{123, "Sam", "sam@example.com"})
 }
 
 func TestUserList(t *testing.T) {
