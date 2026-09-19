@@ -17,8 +17,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
 github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
-github.com/rprtr258/assert v0.1.4 h1:m48ihQIV1lKcaG0FHjbwWDJRx+yyGxYDL2RrPJtIAKg=
-github.com/rprtr258/assert v0.1.4/go.mod h1:uWAUZcZNl4tl9j4OQPRClH2NBbnBjHfRiTICVhZVSLo=
+github.com/rprtr258/assert v0.2.0 h1:98n2/8qI8f4YSLNO+xj4ffnEHvmnO52a419G0uGe3Mw=
+github.com/rprtr258/assert v0.2.0/go.mod h1:uWAUZcZNl4tl9j4OQPRClH2NBbnBjHfRiTICVhZVSLo=
 golang.org/x/mod v0.41.0 h1:qJmnOUb4YB+FsEuM3HcWucdZASCPGhsX6uljO6pog0c=
 golang.org/x/mod v0.41.0/go.mod h1:Ek9pY8RKWXwsWvd3rQiHYtMqkjSUV+s1Rj7j4H5Ur6o=
 golang.org/x/sync v0.23.0 h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk=

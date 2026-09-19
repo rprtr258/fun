@@ -4,7 +4,7 @@ go 1.27.0
 
 tool gotest.tools/gotestsum
 
-require github.com/rprtr258/assert v0.1.4
+require github.com/rprtr258/assert v0.2.0
 
 require (
 	github.com/bitfield/gotestdox v0.2.2 // indirect

@@ -3,7 +3,15 @@ package iter
 import (
 	"fmt"
 	"os"
+	"testing"
+
+	"github.com/rprtr258/assert"
 )
+
+func TestMain(m *testing.M) {
+	assert.Fuse(m)
+	os.Exit(m.Run())
+}
 
 func ExampleBackward() {
 	s := []int{1, 2, 3}

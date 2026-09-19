@@ -1,6 +1,7 @@
 package iter_test
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -8,6 +9,11 @@ import (
 
 	"github.com/rprtr258/fun/iter"
 )
+
+func TestMain(m *testing.M) {
+	assert.Fuse(m)
+	os.Exit(m.Run())
+}
 
 func assertStream[T any](t *testing.T, s iter.Seq[T], expected []T) {
 	t.Helper()

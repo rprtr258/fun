@@ -3,12 +3,18 @@ package orderedmap_test
 import (
 	"cmp"
 	"math/rand"
+	"os"
 	"testing"
 
 	"github.com/rprtr258/assert"
 
 	"github.com/rprtr258/fun/orderedmap"
 )
+
+func TestMain(m *testing.M) {
+	assert.Fuse(m)
+	os.Exit(m.Run())
+}
 
 func TestEmpty(t *testing.T) {
 	t.Parallel()

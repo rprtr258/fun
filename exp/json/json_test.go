@@ -2,10 +2,16 @@ package json
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/rprtr258/assert"
 )
+
+func TestMain(m *testing.M) {
+	assert.Fuse(m)
+	os.Exit(m.Run())
+}
 
 func ExampleAndThen() {
 	type Info struct{}
