@@ -18,8 +18,7 @@ todo: # check todos
 
 # run tests
 test:
-	@#go run gotest.tools/gotestsum@latest
-	gotestsum --format dots-v2
+	go tool gotestsum --format dots-v2
 	@# go test ./... -count=10 -race
 
 cover: # check opens test cover in browser
@@ -29,6 +28,3 @@ cover: # check opens test cover in browser
 
 ci: lint test # run ci checks
 
-setup: # install git precommit hook
-	@echo "#!/bin/env sh\nmake ci" > .git/hooks/pre-commit
-	@chmod +x .git/hooks/pre-commit
