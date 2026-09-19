@@ -141,7 +141,7 @@ func OneOf[T any](decoders ...Decoder[T]) Decoder[T] {
 	}
 }
 
-func AndThen[A, B any](da Decoder[A], f func(A) Decoder[B]) Decoder[B] {
+func (da Decoder[A]) AndThen[B any](f func(A) Decoder[B]) Decoder[B] {
 	return func(v any, res *B) error {
 		var a A
 		if err := da(v, &a); err != nil {
