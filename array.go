@@ -47,6 +47,16 @@ func ConcatMap[T, R any](f func(T) []R, slice ...T) []R {
 	return res
 }
 
+// Flatten flattens lists into single list
+func Flatten[T any](slice ...[]T) []T {
+	newLen := zun.Fold(func(x []T, acc int) int { return acc + len(x) }, 0, slice...)
+	res := make([]T, 0, newLen)
+	for _, elem := range slice {
+		res = append(res, elem...)
+	}
+	return res
+}
+
 // All returns true if all elements satisfy the condition
 func All[T any](condition func(T) bool, slice ...T) bool {
 	_, _, ok := zun.Index(func(elem T) bool {

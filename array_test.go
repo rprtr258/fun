@@ -36,6 +36,43 @@ func TestChunk(t *testing.T) {
 	}
 }
 
+func TestFlatten(t *testing.T) {
+	t.Parallel()
+
+	for name, test := range map[string]struct {
+		slices [][]int
+		want   []int
+	}{
+		"multiple": {
+			slices: [][]int{{1, 2}, {3}, {4, 5}},
+			want:   []int{1, 2, 3, 4, 5},
+		},
+		"single": {
+			slices: [][]int{{1, 2, 3}},
+			want:   []int{1, 2, 3},
+		},
+		"with empty": {
+			slices: [][]int{{}, {1}, {}, {2}},
+			want:   []int{1, 2},
+		},
+		"all empty": {
+			slices: [][]int{{}, {}},
+			want:   []int{},
+		},
+		"no args": {
+			slices: nil,
+			want:   []int{},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			got := fun.Flatten(test.slices...)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
 func ExampleCopy() {
 	fmt.Println(fun.Copy(1, 2, 3))
 	// Output: [1 2 3]
