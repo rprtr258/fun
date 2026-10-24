@@ -17,7 +17,7 @@ type (
 	ESeq2[K, V any] func(bool) (K, V, error)
 )
 
-func Map[T, R any](f func(T) R, s Seq[T]) Seq[R] {
+func (s Seq[T]) Map[R any](f func(T) R) Seq[R] {
 	return func(b bool) (R, bool) {
 		x, ok := s(b)
 		if !ok {
